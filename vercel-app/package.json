@@ -1,0 +1,20 @@
+{
+  "name": "sega-roads",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "dev": "vercel dev",
+    "obfuscate": "node scripts/obfuscate.mjs"
+  },
+  "dependencies": {
+    "jose": "^5.9.6"
+  },
+  "devDependencies": {
+    "@vercel/edge": "^1.2.1",
+    "@vercel/node": "^3.2.24",
+    "javascript-obfuscator": "^4.1.1",
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.8"
+  }
+}
