@@ -1,0 +1,154 @@
+/* === Slow Roads multiplayer UI styles === */
+
+/* Startup gate — full-screen modal that forces the user to pick their
+   identity / mode before the game becomes interactive. Removed on choice. */
+#mp-startup-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.mp-startup-inner {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 28px 36px;
+  border-radius: 8px;
+  text-align: center;
+  width: 360px;
+  max-width: 90vw;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+.mp-startup-inner h2 {
+  margin: 0 0 8px 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+.mp-startup-inner p {
+  margin: 0 0 20px 0;
+  opacity: 0.7;
+  font-size: 0.9rem;
+}
+.mp-startup-inner button {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 0.95rem;
+  background: #2a7;
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mp-startup-inner button:hover { background: #3b8; }
+.mp-startup-inner button.secondary { background: #444; margin-top: 18px; }
+.mp-startup-inner button.secondary:hover { background: #555; }
+
+
+/* Auth panel — top-right floating box */
+#mp-auth-panel {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font: 12px/1.4 system-ui, sans-serif;
+  padding: 8px 10px;
+  border-radius: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  pointer-events: auto;
+}
+#mp-auth-panel button {
+  font: inherit;
+  background: #2a7;
+  color: #fff;
+  border: 0;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+#mp-auth-panel button:hover { background: #3b8; }
+#mp-status-line {
+  width: 100%;
+  flex-basis: 100%;
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+/* Chat overlay — bottom-left */
+#mp-chat-wrap {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  z-index: 9999;
+  width: 280px;
+  pointer-events: none;
+}
+#mp-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 160px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+.mp-chat-line {
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font: 12px/1.4 system-ui, sans-serif;
+  padding: 3px 7px;
+  border-radius: 4px;
+  transition: opacity 1.5s linear;
+}
+.mp-chat-faded { opacity: 0; }
+#mp-chat-input {
+  width: 100%;
+  box-sizing: border-box;
+  font: 12px/1.4 system-ui, sans-serif;
+  padding: 4px 7px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border: 1px solid #5a5;
+  border-radius: 4px;
+  pointer-events: auto;
+}
+
+/* Ghost markers — world-projected 2D overlay (v1). The marker is positioned by
+   JS each frame at the projected screen position of the other player. The
+   border color is set per-player via inline style. */
+.mp-ghost-marker {
+  position: fixed;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+}
+/* Player name tag inside the marker, hangs below */
+.mp-ghost-tag {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, 4px);
+  color: #fff;
+  font: 11px/1.2 system-ui, sans-serif;
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  pointer-events: none;
+}
