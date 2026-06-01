@@ -36,7 +36,7 @@ slowroads.io (Anslo). This project is private and not publicly advertised.
 | Backend host | **Vercel** (serverless `/api` + Edge Middleware + static game files) |
 | Discord check | App gets user identity via OAuth (`identify`); **bot** in SEGA+ authoritatively confirms membership server-side |
 | Where the game lives | **Hosted on Vercel, gated server-side** — unverified clients never receive game files |
-| Unlock mechanism | Short-lived signed **unlock token** → exchanged for an HttpOnly **session cookie** → Edge Middleware gates every asset |
+| Unlock mechanism | Short-lived signed **unlock token** (carried in the URL **fragment**, POSTed to the API — never in query/logs/Referer) → exchanged for an HttpOnly **session cookie** → Edge Middleware gates every asset |
 | Desktop OAuth handoff | **Loopback + PKCE** (no client secret in the app) |
 | Verify rule | Member of SEGA+ only |
 | Launcher obfuscation | **Clean / unpacked** (minimize AV false positives — the whole point is "it's safe") |
@@ -106,12 +106,22 @@ Node's `jsonwebtoken`).
 5. If not → `{ ok:false, reason:"not_member" }`. Surface Discord/config errors
    distinctly (`reason:"discord_error"`).
 
-**`GET /api/unlock?token=…`**:
+**Unlock handoff (token never touches the server URL):**
+- The launcher opens the browser to the static **`/unlock#token=…`** page. The token
+  rides in the **URL fragment**, which browsers never send to the server — so it
+  never appears in request logs or `Referer` headers.
+- `unlock.html` reads the fragment and **`POST`s** `{ token }` to **`/api/unlock`**.
+
+**`POST /api/unlock`** (body `{ token }`):
 1. Verify the unlock JWT (signature, `scope:"unlock"`, not expired).
-2. On success → mint a **session JWT** (`scope:"session"`, **exp 6 h**) and set
-   `Set-Cookie: sega_session=<jwt>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=21600`,
-   then `302` → `/`.
-3. On failure → `302` → `/denied`.
+2. On success → mint a **session JWT** (`scope:"session"`, **exp 6 h**), set
+   `Set-Cookie: sega_session=<jwt>; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=21600`
+   and `Referrer-Policy: no-referrer`, return `200 {ok:true}`. The page then
+   `location.replace("/")` (dropping the fragment entry from history).
+3. On failure → `401`; the page tells the user to relaunch.
+
+> The `/unlock` page is excluded from the middleware gate (it must be reachable
+> without a session cookie — it's what sets the cookie).
 
 **`middleware.ts` (Edge Middleware)** — `matcher` covers everything **except**
 `/api/*`, `/denied`, and the handful of static assets the denied page needs:
@@ -169,8 +179,8 @@ earlier typed-password overlay is removed.
 2. Browser → Discord → user authorizes → loopback receives `code`.
 3. Launcher → `POST /api/verify` → Vercel exchanges code, identifies user, bot
    confirms SEGA+ membership → returns 5-min unlock token.
-4. Launcher opens browser → `GET /api/unlock?token=…` → Vercel sets 6-h session
-   cookie → redirect to `/`.
+4. Launcher opens browser → `/unlock#token=…` → page POSTs token to `/api/unlock`
+   → Vercel sets 6-h session cookie → `location.replace("/")`.
 5. Edge Middleware sees valid cookie → serves the game. Watermark splash plays.
 
 ## Error handling

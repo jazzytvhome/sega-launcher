@@ -6,7 +6,13 @@
 
 **Architecture:** A C# WPF launcher runs a loopback+PKCE Discord OAuth flow, POSTs the code to a Vercel serverless function that exchanges it and asks the SEGA+ bot whether the user is a member. On success Vercel issues a 5-minute signed unlock token; the launcher opens the browser to `/api/unlock`, which trades it for a 6-hour HttpOnly session cookie. Vercel Edge Middleware checks that cookie on every game asset, so unverified clients never receive the files.
 
-**Tech Stack:** Vercel (framework-less: `api/*.ts` Node functions + `middleware.ts` Edge + `public/` static), TypeScript, `jose` (Edge-compatible JWT), Discord OAuth2 + Bot REST, C#/.NET 8 WPF, xUnit, `javascript-obfuscator`.
+**Tech Stack:** Vercel (framework-less: `api/*.ts` Node functions + `middleware.ts` Edge + `public/` static), TypeScript, `jose` (Edge-compatible JWT), Discord OAuth2 + Bot REST, C#/.NET 10 WPF, xUnit, `javascript-obfuscator`.
+
+---
+
+> **Post-implementation amendments (2026-06-01):**
+> 1. **TFM:** launcher targets `net10.0` / `net10.0-windows` (only the .NET 10 SDK was installed; WPF ships in-box). Tasks 10/12 csproj use `net10.0`.
+> 2. **Security hardening (from automated review):** the unlock token is **no longer passed in the query string**. `/api/unlock` is now **POST** (token in body). The launcher opens **`/unlock#token=…`** (fragment, never sent to the server); a static `public/unlock.html` reads the fragment and POSTs it, then `location.replace("/")`. Middleware matcher excludes `unlock`. This keeps the token out of logs/history/Referer. The committed code is the source of truth where Task 4 / Task 11 code blocks below differ.
 
 ---
 
