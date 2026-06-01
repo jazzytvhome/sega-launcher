@@ -1,0 +1,11 @@
+namespace SegaLauncher;
+
+public static class AppConfig
+{
+    // PUBLIC values only. No secrets ever live in the launcher.
+    public const string DiscordClientId = "REPLACE_WITH_DISCORD_CLIENT_ID";
+    public const string VercelBaseUrl   = "https://sega-roads.vercel.app";
+    public const int    LoopbackPort    = 51789;
+
+    public static string RedirectUri => $"http://127.0.0.1:{LoopbackPort}/callback";
+}
