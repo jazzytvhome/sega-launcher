@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+
+		<!-- Electron defs -->
+		<!-- <meta http-equiv="Content-Security-Policy"
+		content="
+			default-src 'self';
+			script-src 'self' 'unsafe-inline';
+			style-src 'self' 'unsafe-inline';
+			img-src 'self' data:;
+			font-src 'self';
+			object-src 'none';
+		"> -->
+
+		<link rel="icon" href="/favicon.svg" />
+		<link rel="apple-touch-icon" href="apple-touch-icon.png">
+		<!-- <link rel="icon" href="/favicon_dark.svg" type="image/x-icon" media="(prefers-color-scheme: dark)"> -->
+		<!-- <link rel="icon" href="/favicon_light.svg" type="image/x-icon" media="(prefers-color-scheme: light)"> -->
+		<link rel="preload" href="/fonts/Sono.ttf" as="font" type="font/ttf" crossorigin>
+		<link rel="preload" href="/fonts/Space.ttf" as="font" type="font/ttf" crossorigin>
+
+		<link rel="manifest" href="/manifest.json">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" >
+		<meta name="theme-color" content="#ffffff">
+		<meta name="title" content="Slow Roads">
+		<meta name="description" content="Endless driving zen">
+		<meta name="color-scheme" content="light only">
+
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website">
+		<meta property="og:url" content="https://slowroads.io/">
+		<meta property="og:title" content="Slow Roads">
+		<meta property="og:description" content="Endless driving zen">
+		<meta property="og:image" content="/meta-2.0.0.jpg">
+
+		<!-- Twitter -->
+		<meta property="twitter:card" content="summary_large_image">
+		<meta property="twitter:url" content="https://slowroads.io/">
+		<meta property="twitter:title" content="Slow Roads">
+		<meta property="twitter:description" content="Endless driving zen">
+		<meta property="twitter:image" content="/meta-2.0.0.jpg">
+
+		<title>&#8202;s&#8202;l&#8202;o&#8202;w&nbsp;&nbsp;r&#8202;o&#8202;a&#8202;d&#8202;s</title>
+
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+			  if (window.location.hash) {
+				// Check if the URL contains a hash
+				const metas = document.querySelectorAll('meta[property^="og:"], meta[name^="twitter:"]');
+
+				// Remove or modify the necessary meta tags
+				metas.forEach(meta => {
+				  	meta.parentNode.removeChild(meta);
+				});
+			  }
+			});
+
+		</script>
+
+		<style>
+
+			:root {
+				--sr-white: #F4F2ED;
+
+				--sr-white-0: #F4F2ED00;
+				--sr-white-25: #F4F2ED40;
+				--sr-white-50: #F4F2ED80;
+				--sr-white-75: #F4F2EDC0;
+				--sr-white-90: #F4F2EDE0;
+
+				--sr-primary: #343c3e;
+				--sr-primary-0: #343c3e00;
+				--sr-primary-25: #343c3e40;
+				--sr-primary-50: #343c3e80;
+				--sr-primary-75: #343c3eC0;
+
+				--sr-secondary: #D2D1CD;
+				--sr-secondary-0: #D2D1CD00;
+				--sr-secondary-25: #D2D1CD40;
+				--sr-secondary-50: #D2D1CD80;
+				--sr-secondary-75: #D2D1CDC0;
+				--sr-secondary-90: #D2D1CDEE;
+
+				--sr-tertiary: #7e7c76;
+				--sr-tertiary-0: #7e7c7600;
+				--sr-tertiary-25: #7e7c7640;
+				--sr-tertiary-50: #7e7c7680;
+				--sr-tertiary-75: #7e7c76C0;
+				--sr-tertiary-90: #7e7c76EE;
+
+				--sr-warn: #ff992b;
+
+				--sr-dark: #444444;
+				--sr-darker: #333;
+				--sr-black: #222222;
+
+				--sr-bg: #F4F2ED;
+				--sr-lowlight: #343c3e80;
+
+				color-scheme: light only;
+			}
+
+			@font-face {
+				font-family: Sono;
+				src: url(/fonts/Sono.ttf);
+				font-variant: slashed-zero;
+			}
+
+			@font-face {
+				font-family: Space;
+				src: url(/fonts/Space.ttf);
+				font-variant: slashed-zero;
+			}
+
+			/* width */
+			::-webkit-scrollbar {
+				width: 0.6rem;
+			}
+
+			/* Track */
+			::-webkit-scrollbar-track {
+				background: var(--sr-primary-25);
+			}
+
+			/* Handle */
+			::-webkit-scrollbar-thumb {
+				background: var(--sr-primary-50);
+			}
+
+			/* Handle on hover */
+			::-webkit-scrollbar-thumb:hover {
+				background: var(--sr-primary);
+			}
+
+			* {
+				margin: 0;
+				padding: 0;
+				scroll-behavior: smooth !important;
+				font-variant: slashed-zero;
+		    }
+
+			body {
+				overflow: hidden;
+				font-family: Space, Helvetica, sans-serif;
+			}
+
+			img {
+				-webkit-user-drag: none;
+				-khtml-user-drag: none;
+				-moz-user-drag: none;
+				-o-user-drag: none;
+				user-drag: none;
+			}
+
+			a {
+				text-decoration: none;
+			}
+
+			html {
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				font-size: 16px;
+			}
+
+			@media screen and (orientation: landscape) and (max-width: 1361px)  {
+				html {
+					font-size: 14px;
+				}
+			}
+
+			@media screen and (orientation: landscape) and (max-width: 1180px) {
+				html {
+					font-size: 12px;
+				}
+			}
+
+			@media screen and (orientation: portrait) {
+				html {
+					font-size: 12px;
+				}
+			}
+
+
+
+		</style>
+
+		<script src="/alea.min.js"></script>
+
+		
+		<link rel="modulepreload" href="/_app/immutable/entry/start.0d706404.js">
+		<link rel="modulepreload" href="/_app/immutable/chunks/scheduler.05185c5f.js">
+		<link rel="modulepreload" href="/_app/immutable/chunks/singletons.0fb222fd.js">
+		<link rel="modulepreload" href="/_app/immutable/chunks/index.205d685d.js">
+		<link rel="modulepreload" href="/_app/immutable/chunks/control.c2cf8273.js">
+		<link rel="modulepreload" href="/_app/immutable/entry/app.21ab72c4.js">
+		<link rel="modulepreload" href="/_app/immutable/chunks/index.2e86b85f.js">
+	</head>
+	<body data-sveltekit-preload-data="hover">
+
+		<!-- ===== SKID GATE + WATERMARK (injected) ===== -->
+		<style>
+			#skid-gate{position:fixed;inset:0;z-index:2147483646;display:flex;
+				flex-direction:column;align-items:center;justify-content:center;
+				background:#222;color:#F4F2ED;font-family:Space,Helvetica,sans-serif;
+				gap:1.2rem;transition:opacity .6s ease;}
+			#skid-gate.hidden{opacity:0;pointer-events:none;}
+			#skid-gate h1{font-size:1.4rem;letter-spacing:.18em;font-weight:600;
+				text-transform:uppercase;opacity:.85;}
+			#skid-gate .row{display:flex;gap:.5rem;align-items:center;}
+			#skid-gate input{background:#343c3e;border:1px solid #7e7c76;color:#F4F2ED;
+				font-family:Space,monospace;font-size:1rem;padding:.7rem 1rem;border-radius:.4rem;
+				outline:none;width:14rem;text-align:center;letter-spacing:.1em;}
+			#skid-gate input:focus{border-color:#F4F2ED;}
+			#skid-gate button{background:#F4F2ED;color:#222;border:none;cursor:pointer;
+				font-family:Space,sans-serif;font-size:1rem;font-weight:600;padding:.7rem 1.2rem;
+				border-radius:.4rem;}
+			#skid-gate .err{color:#ff992b;font-size:.85rem;height:1rem;opacity:0;transition:opacity .2s;}
+			#skid-gate .err.show{opacity:1;}
+
+			#skid-mark{position:fixed;inset:0;z-index:2147483645;display:flex;
+				flex-direction:column;align-items:center;justify-content:center;
+				pointer-events:none;background:rgba(34,34,34,.55);
+				font-family:Space,Helvetica,sans-serif;color:#F4F2ED;text-align:center;
+				opacity:0;transition:opacity .8s ease;}
+			#skid-mark.show{opacity:1;}
+			#skid-mark .big{font-size:2.6rem;font-weight:700;letter-spacing:.06em;
+				text-shadow:0 2px 14px rgba(0,0,0,.6);}
+			#skid-mark .sub{font-size:1.4rem;font-weight:600;letter-spacing:.22em;margin-top:.4rem;
+				color:#ff992b;text-shadow:0 2px 14px rgba(0,0,0,.6);}
+		</style>
+
+		<div id="skid-gate">
+			<h1>protected build</h1>
+			<div class="row">
+				<input id="skid-pass" type="password" placeholder="password" autocomplete="off" autofocus>
+				<button id="skid-go">enter</button>
+			</div>
+			<div class="err" id="skid-err">wrong password</div>
+		</div>
+
+		<div id="skid-mark">
+			<div class="big">SKIDDED BY JUSTONEONTOP</div>
+			<div class="sub">SEGA+ ON TOP</div>
+		</div>
+
+		<script>
+			(function(){
+				// ===================================================
+				//  SET YOUR PASSWORD HERE  (one line, that's it)
+				const SKID_PASSWORD = "CHANGE_ME";
+				// ===================================================
+
+				var gate = document.getElementById("skid-gate");
+				var input = document.getElementById("skid-pass");
+				var go = document.getElementById("skid-go");
+				var err = document.getElementById("skid-err");
+				var mark = document.getElementById("skid-mark");
+
+				function showWatermark(){
+					mark.classList.add("show");           // fade in
+					setTimeout(function(){ mark.classList.remove("show"); }, 3000); // hold 3s then fade
+					setTimeout(function(){ mark.remove(); }, 4000);                 // remove after fade-out
+				}
+
+				function unlock(){
+					gate.classList.add("hidden");
+					setTimeout(function(){ gate.remove(); }, 600);
+					try { sessionStorage.setItem("skid-ok", "1"); } catch(e){}
+					showWatermark();
+				}
+
+				function tryPass(){
+					if (input.value === SKID_PASSWORD){
+						unlock();
+					} else {
+						err.classList.add("show");
+						input.value = "";
+						input.focus();
+					}
+				}
+
+				go.addEventListener("click", tryPass);
+				input.addEventListener("keydown", function(e){
+					if (e.key === "Enter") tryPass();
+					else err.classList.remove("show");
+				});
+
+				// Already unlocked this browser session? skip the gate, still show the watermark.
+				try {
+					if (sessionStorage.getItem("skid-ok") === "1"){
+						gate.remove();
+						showWatermark();
+					}
+				} catch(e){}
+			})();
+		</script>
+		<!-- ===== /SKID GATE + WATERMARK ===== -->
+
+		<div style="display: contents">
+			<script>
+				{
+					__sveltekit_feqks6 = {
+						base: "",
+						env: {"PUBLIC_DRIFTMAS":"false","PUBLIC_ELECTRON":"false"}
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("/_app/immutable/entry/start.0d706404.js"),
+						import("/_app/immutable/entry/app.21ab72c4.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element);
+					});
+
+					if ('serviceWorker' in navigator) {
+						addEventListener('load', function () {
+							navigator.serviceWorker.register('/service-worker.js');
+						});
+					}
+				}
+			</script>
+		</div>
+		<link rel="stylesheet" href="/_app/multiplayer/mp-ui.css">
+		<script src="/_app/multiplayer/playfab.min.js"></script>
+		<script src="/_app/multiplayer/photon-loadbalancing.js"></script>
+		<script src="/_app/multiplayer/mp-config.js"></script>
+		<script src="/_app/multiplayer/mp-client.js"></script>
+	</body>
+</html>
