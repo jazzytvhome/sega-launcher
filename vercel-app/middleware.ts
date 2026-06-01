@@ -1,9 +1,10 @@
 import { next, rewrite } from "@vercel/edge";
 import { verifyToken } from "./lib/tokens.js";
 
-// Run on everything EXCEPT the API, the denied page, and the denied page's own assets.
+// Run on everything EXCEPT the API, the denied page, and the public unlock page
+// (the unlock page must be reachable without a session cookie — it's what sets it).
 export const config = {
-  matcher: ["/((?!api/|denied|favicon|robots).*)"],
+  matcher: ["/((?!api/|denied|unlock|favicon|robots).*)"],
 };
 
 export default async function middleware(request: Request): Promise<Response> {

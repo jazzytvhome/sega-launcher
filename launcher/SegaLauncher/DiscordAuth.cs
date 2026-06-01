@@ -84,7 +84,10 @@ public static class DiscordAuth
 
     public static void LaunchGame(string unlockToken)
     {
-        var url = $"{AppConfig.VercelBaseUrl}/api/unlock?token={Uri.EscapeDataString(unlockToken)}";
+        // Token rides in the URL fragment (#token=...), which the browser never
+        // sends to the server — so it stays out of request logs and Referer headers.
+        // The static /unlock page reads it and POSTs it to /api/unlock.
+        var url = $"{AppConfig.VercelBaseUrl}/unlock#token={Uri.EscapeDataString(unlockToken)}";
         Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
