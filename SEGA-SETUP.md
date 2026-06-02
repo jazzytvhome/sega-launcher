@@ -33,13 +33,14 @@ Fill in your secrets once, then let the helper push them all and deploy:
 cd "C:\Users\jazzy\Downloads\slow roads\vercel-app"
 copy .env.example .env          # then edit .env and paste in your 5 values
 npx vercel login                # interactive — complete it in Google Chrome
-.\deploy.ps1                     # pushes all env vars + deploys, scope: jazzytvhome
+.\deploy.ps1                     # pushes all env vars + deploys (personal account)
 # (preview first with:  .\deploy.ps1 -DryRun )
 ```
 
 `deploy.ps1` reads `.env`, pushes `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
-`DISCORD_BOT_TOKEN`, `SEGA_GUILD_ID`, `GAME_KEY` to Vercel **production** under the
-**jazzytvhome** scope, then deploys. Note the production URL it prints — that goes in
+`DISCORD_BOT_TOKEN`, `SEGA_GUILD_ID`, `GAME_KEY` to Vercel **production** on your
+personal account (the default), then deploys. (For a Vercel **team**, pass
+`-Scope <team-name>` — a personal account is rejected by `--scope`.) Note the production URL it prints — that goes in
 `AppConfig.cs` (step 5).
 
 The only endpoint is `POST /api/verify`: it checks SEGA+ membership and, on success,

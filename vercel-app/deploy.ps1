@@ -4,20 +4,25 @@
 #     npx vercel login
 #
 # Then:
-#     .\deploy.ps1                 # uses .env, scope jazzytvhome
+#     .\deploy.ps1                 # personal account (default), uses .env
 #     .\deploy.ps1 -DryRun         # print what it would do, run nothing
-#     .\deploy.ps1 -Scope other    # different Vercel team/user
+#     .\deploy.ps1 -Scope myteam   # ONLY if deploying under a Vercel TEAM (not a personal account)
 #
 # Run this from the vercel-app folder.
 
 param(
   [string]$EnvFile = (Join-Path $PSScriptRoot ".env"),
-  [string]$Scope = "jazzytvhome",
+  [string]$Scope = "",          # empty = your personal account (the default). Set only for a team.
   [switch]$DryRun
 )
 
 $ErrorActionPreference = "Stop"
 $keys = @("DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN", "SEGA_GUILD_ID", "GAME_KEY")
+
+# Only pass --scope when a (team) scope is given; a personal account is rejected by --scope.
+$scopeArgs = @()
+if ($Scope) { $scopeArgs = @("--scope", $Scope) }
+$scopeLabel = if ($Scope) { $Scope } else { "(personal account - default)" }
 
 if (-not (Test-Path $EnvFile)) {
   Write-Error "No $EnvFile found. Copy .env.example to .env and fill it in."
@@ -36,31 +41,31 @@ foreach ($line in Get-Content $EnvFile) {
 $missing = $keys | Where-Object { -not $vals[$_] }
 if ($missing) { Write-Error "Missing values in ${EnvFile}: $($missing -join ', ')" }
 
-Write-Host "Vercel scope: $Scope" -ForegroundColor Cyan
+Write-Host "Vercel scope: $scopeLabel" -ForegroundColor Cyan
 Write-Host "(If this fails with an auth error, run 'npx vercel login' and complete it in Google Chrome.)" -ForegroundColor Yellow
 
 if ($DryRun) {
-  Write-Host "[dry run] npx vercel link --yes --scope $Scope"
+  Write-Host "[dry run] npx vercel link --yes $($scopeArgs -join ' ')"
   foreach ($k in $keys) {
-    Write-Host "[dry run] npx vercel env rm $k production --yes --scope $Scope   (ignored if absent)"
-    Write-Host "[dry run] <value of $k> | npx vercel env add $k production --scope $Scope"
+    Write-Host "[dry run] npx vercel env rm $k production --yes $($scopeArgs -join ' ')   (ignored if absent)"
+    Write-Host "[dry run] <value of $k> | npx vercel env add $k production $($scopeArgs -join ' ')"
   }
-  Write-Host "[dry run] npx vercel deploy --prod --scope $Scope"
+  Write-Host "[dry run] npx vercel deploy --prod $($scopeArgs -join ' ')"
   return
 }
 
-# --- link the project (idempotent) ---
-npx vercel link --yes --scope $Scope
+# --- link the project (idempotent; creates it on first run) ---
+npx vercel link --yes @scopeArgs
 
 # --- push each var to production (remove-then-add so re-runs update cleanly) ---
 foreach ($k in $keys) {
   Write-Host "==> $k" -ForegroundColor Cyan
-  try { npx vercel env rm $k production --yes --scope $Scope 2>$null | Out-Null } catch {}
-  $vals[$k] | npx vercel env add $k production --scope $Scope
+  try { npx vercel env rm $k production --yes @scopeArgs 2>$null | Out-Null } catch {}
+  $vals[$k] | npx vercel env add $k production @scopeArgs
 }
 
 # --- deploy ---
-npx vercel deploy --prod --scope $Scope
+npx vercel deploy --prod @scopeArgs
 
 Write-Host ""
 Write-Host "Done. Copy the production URL above into launcher\SegaLauncher\AppConfig.cs" -ForegroundColor Green
