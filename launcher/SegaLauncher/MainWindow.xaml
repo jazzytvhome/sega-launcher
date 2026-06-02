@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SEGA+" Height="480" Width="560"
         WindowStartupLocation="CenterScreen" ResizeMode="CanMinimize"
-        FontFamily="Segoe UI" Background="{StaticResource Bg}">
+        FontFamily="Segoe UI" Background="{StaticResource Bg}"
+        Loaded="Window_Loaded">
     <Grid Margin="30,26,30,22">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -20,11 +21,25 @@
             <TextBlock Text="Members-only source code." Foreground="{StaticResource Muted}" FontSize="13" Margin="0,4,0,0"/>
         </StackPanel>
 
-        <!-- content: two overlapping panels -->
+        <!-- content: overlapping panels -->
         <Grid Grid.Row="1">
 
+            <!-- update check (shown first) -->
+            <StackPanel x:Name="CheckPanel" VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Checking for updates… please wait" Foreground="{StaticResource Muted}" FontSize="14"/>
+            </StackPanel>
+
+            <!-- update required -->
+            <StackPanel x:Name="UpdatePanel" Visibility="Collapsed" VerticalAlignment="Top">
+                <TextBlock Text="Update needed" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="SemiBold"/>
+                <TextBlock Text="A newer version is required to continue. Please grab the latest SEGA+ Installer, then reopen it."
+                           Foreground="{StaticResource Text}" FontSize="13" TextWrapping="Wrap" Margin="0,12,0,18"/>
+                <Button x:Name="DownloadButton" Style="{StaticResource Primary}" Content="Get the latest version" Click="Download_Click"/>
+                <Button Style="{StaticResource Ghost}" Content="re-check" Click="Recheck_Click" Margin="0,12,0,0"/>
+            </StackPanel>
+
             <!-- mode select -->
-            <StackPanel x:Name="ModePanel" VerticalAlignment="Top">
+            <StackPanel x:Name="ModePanel" Visibility="Collapsed" VerticalAlignment="Top">
                 <TextBlock Text="What do you want to do?" Foreground="{StaticResource Text}" FontSize="14" Margin="0,0,0,12"/>
                 <Button Style="{StaticResource CardButton}" Click="PlayMode_Click" Margin="0,0,0,12">
                     <StackPanel>

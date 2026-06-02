@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
@@ -13,6 +14,7 @@ public partial class MainWindow : Window
     private enum Mode { Play, Install }
     private Mode _mode;
     private LocalServer? _server;
+    private string? _downloadUrl;
 
     public MainWindow()
     {
@@ -20,6 +22,40 @@ public partial class MainWindow : Window
         SourceCombo.ItemsSource = Catalog.Items;
         SourceCombo.SelectedIndex = 0;
     }
+
+    // ---- update gate (runs first, before anything else) ----
+    private async void Window_Loaded(object sender, RoutedEventArgs e) => await RunUpdateCheckAsync();
+
+    private async Task RunUpdateCheckAsync()
+    {
+        CheckPanel.Visibility = Visibility.Visible;
+        UpdatePanel.Visibility = Visibility.Collapsed;
+        ModePanel.Visibility = Visibility.Collapsed;
+        WorkPanel.Visibility = Visibility.Collapsed;
+
+        var info = await Updater.FetchAsync();
+        CheckPanel.Visibility = Visibility.Collapsed;
+
+        if (info != null && VersionGate.IsOutdated(AppConfig.Version, info.min))
+        {
+            _downloadUrl = info.url;
+            DownloadButton.Visibility =
+                string.IsNullOrWhiteSpace(info.url) ? Visibility.Collapsed : Visibility.Visible;
+            UpdatePanel.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            ModePanel.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void Download_Click(object sender, RoutedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(_downloadUrl))
+            Process.Start(new ProcessStartInfo(_downloadUrl) { UseShellExecute = true });
+    }
+
+    private async void Recheck_Click(object sender, RoutedEventArgs e) => await RunUpdateCheckAsync();
 
     // ---- navigation ----
     private void PlayMode_Click(object sender, RoutedEventArgs e) => EnterWork(Mode.Play);

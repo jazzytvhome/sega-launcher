@@ -16,6 +16,7 @@
     <Compile Include="../SegaLauncher/Installer.cs" />
     <Compile Include="../SegaLauncher/LocalServer.cs" />
     <Compile Include="../SegaLauncher/Integrity.cs" />
+    <Compile Include="../SegaLauncher/VersionGate.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fixtures/vector.enc">

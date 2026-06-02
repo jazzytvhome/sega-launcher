@@ -7,5 +7,9 @@ public static class AppConfig
     public const string VercelBaseUrl   = "https://vercel-app-seven-lake.vercel.app";
     public const int    LoopbackPort    = 51789;
 
+    // Bump this when you ship an update, and set MIN_VERSION in Vercel to match
+    // so older launchers show "update needed".
+    public const string Version = "1.0.0";
+
     public static string RedirectUri => $"http://127.0.0.1:{LoopbackPort}/callback";
 }

@@ -65,7 +65,7 @@ foreach ($k in $keys) {
 }
 
 # --- optional vars (pushed only if set in .env) ---
-foreach ($k in @("BLACKLIST")) {
+foreach ($k in @("BLACKLIST", "MIN_VERSION", "LATEST_VERSION", "DOWNLOAD_URL")) {
   if ($vals.ContainsKey($k) -and $vals[$k]) {
     Write-Host "==> $k (optional)" -ForegroundColor Cyan
     try { npx vercel env rm $k production --yes @scopeArgs 2>$null | Out-Null } catch {}
