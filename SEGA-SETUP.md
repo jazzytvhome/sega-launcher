@@ -101,11 +101,13 @@ is unobfuscated specifically so scans come back clean).
 
 ## 7. Test (the part only you can do — needs real Discord)
 
-- [ ] **Member:** run the .exe → Verify → authorize with an account in SEGA+ →
-      "Decrypting…" → browser opens `http://127.0.0.1:<port>` → game plays + watermark.
-- [ ] **Non-member:** same with an account NOT in SEGA+ → "Members only", no decrypt.
+- [ ] **Member:** run the .exe → pick "Slow Roads (modded)" → "Verify with Discord &
+      Install" → authorize with a SEGA+ account → choose a folder → the source code
+      installs there and the folder opens (with the watermark in `index.html`).
+- [ ] **Non-member:** same with an account NOT in SEGA+ → "Members only", no install.
 - [ ] **No blob:** move `game.enc` away → "game.enc not found next to the launcher".
-- [ ] **Keep-open:** closing the launcher stops the local server (game stops loading new assets).
+- [ ] **Clean source:** the installed folder has the slow roads files only — no Discord/
+      Vercel/launcher code (verified by an automated test too).
 
 > **If a key ever leaks:** generate a new `GAME_KEY` (step 2), update the Vercel env
 > var (step 3), rebuild `game.enc` (step 4), and re-post. Old blobs/keys stop working.
@@ -119,9 +121,13 @@ is unobfuscated specifically so scans come back clean).
   (plaintext lives in `vercel-app/game-src/`, excluded from deploys).
 - **Blob pipeline** (`vercel-app/scripts/`): `build:blob` (AES-256-GCM + per-file deflate),
   `keygen`, `make:vector` (cross-language test fixture).
-- **Launcher** (`launcher/SegaLauncher/`): Discord PKCE → key → `GameVault` (in-memory
-  AES-GCM decrypt) → `LocalServer` (serves over localhost, plaintext never on disk).
-  **5 unit tests pass** incl. a Node→C# crypto interop test. Builds clean (net10).
+- **Launcher** (`launcher/SegaLauncher/`): a source-code **installer** — pick an item
+  from the catalog → Discord PKCE → key → `GameVault` (AES-GCM decrypt) → `Installer`
+  writes the clean source to a folder you choose. The SEGA+ gate lives ONLY in the exe,
+  never in the installed source. **7 unit tests pass** incl. Node→C# crypto interop and
+  a check that the installed source carries no gate code. Builds clean (net10).
+- **Distribution:** `package.ps1` ships the exe + `game.enc` only (no launcher source by
+  default — pass `-IncludeSource` to add it).
 - **Honest limits:** a verified member can still dump the running game or leak the key;
   the gate stops *non-members getting the key*. Re-key on leak (above).
 
