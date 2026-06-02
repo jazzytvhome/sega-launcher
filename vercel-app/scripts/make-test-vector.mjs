@@ -6,6 +6,7 @@ const KEY_B64 = "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8="; // bytes 0x00..0
 const key = Buffer.from(KEY_B64, "base64");
 
 const entries = [
+  { path: "index.html", content: Buffer.from("<html>root</html>", "utf8") },
   { path: "hello.txt", content: Buffer.from("SEGA+ ON TOP", "utf8") },
   { path: "_app/inner.txt", content: Buffer.from("nested-ok", "utf8") },
 ];

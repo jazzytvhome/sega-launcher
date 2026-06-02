@@ -10,6 +10,15 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Pull in the units under test directly (they have no WPF dependencies). -->
     <Compile Include="../SegaLauncher/Pkce.cs" />
+    <Compile Include="../SegaLauncher/GameVault.cs" />
+    <Compile Include="../SegaLauncher/LocalServer.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="fixtures/vector.enc">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>fixtures/vector.enc</Link>
+    </None>
   </ItemGroup>
 </Project>

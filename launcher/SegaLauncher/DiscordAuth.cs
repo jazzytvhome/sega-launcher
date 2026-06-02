@@ -11,7 +11,7 @@ namespace SegaLauncher;
 
 public enum AuthOutcome { Verified, NotMember, Cancelled, ServerError, PortBusy }
 
-public sealed record AuthResult(AuthOutcome Outcome, string? UnlockToken = null, string? Message = null);
+public sealed record AuthResult(AuthOutcome Outcome, string? Key = null, string? Message = null);
 
 public static class DiscordAuth
 {
@@ -70,25 +70,16 @@ public static class DiscordAuth
                     Message: "Server config issue — contact a SEGA+ admin.");
 
             var body = await resp.Content.ReadFromJsonAsync<VerifyResponse>(cancellationToken: ct);
-            if (body is null || !body.ok || string.IsNullOrEmpty(body.token))
+            if (body is null || !body.ok || string.IsNullOrEmpty(body.key))
                 return new AuthResult(AuthOutcome.ServerError, Message: "Unexpected server response.");
 
-            return new AuthResult(AuthOutcome.Verified, body.token);
+            return new AuthResult(AuthOutcome.Verified, body.key);
         }
         catch (HttpRequestException)
         {
             return new AuthResult(AuthOutcome.ServerError,
                 Message: "Can't reach the server — try again later.");
         }
-    }
-
-    public static void LaunchGame(string unlockToken)
-    {
-        // Token rides in the URL fragment (#token=...), which the browser never
-        // sends to the server — so it stays out of request logs and Referer headers.
-        // The static /unlock page reads it and POSTs it to /api/unlock.
-        var url = $"{AppConfig.VercelBaseUrl}/unlock#token={Uri.EscapeDataString(unlockToken)}";
-        Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
     }
 
     private static async Task WriteBrowserPageAsync(HttpListenerResponse res, string message)
@@ -103,5 +94,5 @@ public static class DiscordAuth
         res.OutputStream.Close();
     }
 
-    private sealed record VerifyResponse(bool ok, string? token);
+    private sealed record VerifyResponse(bool ok, string? key);
 }
