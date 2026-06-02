@@ -4,6 +4,8 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Navigation;
 using Microsoft.Win32;
 
@@ -43,11 +45,11 @@ public partial class MainWindow : Window
                 ? u.AbsoluteUri
                 : null;
             DownloadButton.Visibility = _downloadUrl != null ? Visibility.Visible : Visibility.Collapsed;
-            UpdatePanel.Visibility = Visibility.Visible;
+            FadeIn(UpdatePanel);
         }
         else
         {
-            ModePanel.Visibility = Visibility.Visible;
+            FadeIn(ModePanel);
         }
     }
 
@@ -59,6 +61,18 @@ public partial class MainWindow : Window
     }
 
     private async void Recheck_Click(object sender, RoutedEventArgs e) => await RunUpdateCheckAsync();
+
+    // Reveal a panel with a quick fade + upward slide.
+    private static void FadeIn(FrameworkElement el)
+    {
+        el.Visibility = Visibility.Visible;
+        var tt = new TranslateTransform(0, 12);
+        el.RenderTransform = tt;
+        el.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
+        tt.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(260))
+            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+    }
 
     // ---- navigation ----
     private void PlayMode_Click(object sender, RoutedEventArgs e) => EnterWork(Mode.Play);
@@ -72,7 +86,7 @@ public partial class MainWindow : Window
         ActionButton.IsEnabled = true;
         StatusText.Text = "";
         ModePanel.Visibility = Visibility.Collapsed;
-        WorkPanel.Visibility = Visibility.Visible;
+        FadeIn(WorkPanel);
     }
 
     private void Back_Click(object sender, RoutedEventArgs e)
@@ -80,7 +94,7 @@ public partial class MainWindow : Window
         _server?.Dispose();
         _server = null;
         WorkPanel.Visibility = Visibility.Collapsed;
-        ModePanel.Visibility = Visibility.Visible;
+        FadeIn(ModePanel);
     }
 
     private void SourceCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
