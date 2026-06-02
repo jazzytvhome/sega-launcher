@@ -13,6 +13,7 @@
 > **Post-implementation amendments (2026-06-01):**
 > 1. **TFM:** launcher targets `net10.0` / `net10.0-windows` (only the .NET 10 SDK was installed; WPF ships in-box). Tasks 10/12 csproj use `net10.0`.
 > 2. **Security hardening (from automated review):** the unlock token is **no longer passed in the query string**. `/api/unlock` is now **POST** (token in body). The launcher opens **`/unlock#token=…`** (fragment, never sent to the server); a static `public/unlock.html` reads the fragment and POSTs it, then `location.replace("/")`. Middleware matcher excludes `unlock`. This keeps the token out of logs/history/Referer. The committed code is the source of truth where Task 4 / Task 11 code blocks below differ.
+> 3. **MAJOR PIVOT — encrypted distribution (2026-06-02):** the user is distributing the game files, not hosting them, so the hosted gate (Tasks 4–8 hosting bits) was replaced. The game is shipped **encrypted (`game.enc`)**; `POST /api/verify` returns the **AES key** to SEGA+ members; the launcher decrypts **in memory** and serves over **localhost**. Removed: `api/unlock.ts`, `middleware.ts`, `denied.html`, `unlock.html`, `lib/tokens.ts`. Added: `vercel-app/scripts/` (blob pipeline), `launcher/SegaLauncher/GameVault.cs` + `LocalServer.cs`. `public/` → `game-src/` (kept out of Vercel deploys). See the spec's "v2 — Encrypted Distribution" section and `SEGA-SETUP.md`. **The committed code + spec v2 are the source of truth; the v1 task code blocks below are historical.**
 
 ---
 

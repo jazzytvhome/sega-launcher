@@ -1,7 +1,37 @@
 # SEGA+ Discord-Gated Launcher — Design
 
-**Date:** 2026-06-01
-**Status:** Design — awaiting user review before implementation plan
+**Date:** 2026-06-01 (v2 amendment 2026-06-02)
+**Status:** Implemented on branch `sega-launcher`
+
+---
+
+## ⚠️ v2 — Encrypted Distribution (2026-06-02) — SUPERSEDES the hosted model below
+
+The user is **distributing the game files** (posting in Discord), not hosting them.
+That invalidates the server-side hosting gate (you can't gate files you hand out), so
+the architecture changed to **encrypt-and-key-on-verification**:
+
+- **Ship:** `SEGA+ Launcher.exe` + `game.enc` (AES-256-GCM). **Keep private:** the
+  plaintext game (`vercel-app/game-src/`) and the AES key (`GAME_KEY`, Vercel env).
+- **Flow:** launcher → Discord PKCE → `POST /api/verify` (bot checks SEGA+) → returns
+  **`GAME_KEY`** → launcher decrypts `game.enc` **in memory** → serves it from a
+  **localhost** HTTP server → opens the browser. Plaintext never hits disk; closing
+  the launcher discards it.
+- **Backend shrank:** no hosting, no edge middleware, no session cookie, no JWT. Just
+  `POST /api/verify` returning the key. `api/unlock.ts`, `middleware.ts`, `denied.html`,
+  `unlock.html`, `lib/tokens.ts` were removed.
+- **Launcher grew:** `GameVault` (AES-GCM decrypt + container parse) and `LocalServer`
+  (in-memory localhost server). Format defined in `vercel-app/scripts/lib/pack.mjs`,
+  decoded in `launcher/SegaLauncher/GameVault.cs`, proven by a Node→C# interop test.
+- **Honest limit:** a verified member can still dump the running game or leak the key;
+  the gate stops *non-members obtaining the key*. Mitigation is re-keying on leak.
+- **Delivery:** clean unobfuscated `.exe` (self-contained) **plus** source + a VirusTotal
+  link — chosen to fight the "is it a virus?" perception.
+
+Operational steps live in `SEGA-SETUP.md`. The sections below describe the original
+**v1 hosted** design and are retained for history only.
+
+---
 
 ## Purpose & context
 

@@ -1,63 +1,105 @@
-# SEGA+ Launcher — finish-up checklist
+# SEGA+ Launcher — finish-up checklist (encrypted distribution)
 
-Everything is built and on the **`sega-launcher`** git branch. Two things need *you*
-(they involve secrets / live accounts I can't and shouldn't do):
+Everything is built and on the **`sega-launcher`** git branch. You distribute
+**the launcher + `game.enc`**; the plaintext game and the AES key stay private.
 
-## 1. Discord app + bot (Task 9)
+> **The golden rule:** the `GAME_KEY` you put in Vercel **must be the exact same key**
+> you build `game.enc` with. The launcher fetches that key from Vercel (only for SEGA+
+> members) and uses it to decrypt the blob. Different keys → "couldn't decrypt".
+
+---
+
+## 1. Discord app + bot
 
 1. <https://discord.com/developers/applications> → **New Application**.
-2. **OAuth2** page → copy **Client ID** and **Client Secret**.
-3. **OAuth2 → Redirects** → add EXACTLY: `http://127.0.0.1:51789/callback` → Save.
-4. **Bot** page → Add Bot → copy **Bot Token** → enable **Server Members Intent**.
+2. **OAuth2** → copy **Client ID** + **Client Secret**.
+3. **OAuth2 → Redirects** → add EXACTLY `http://127.0.0.1:51789/callback` → Save.
+4. **Bot** → Add Bot → copy **Bot Token** → enable **Server Members Intent**.
 5. Invite the bot to **SEGA+** (OAuth2 URL Generator, scope `bot`, no extra perms).
-6. In Discord (Developer Mode on) → right-click the SEGA+ icon → **Copy Server ID**.
+6. Developer Mode on → right-click SEGA+ icon → **Copy Server ID**.
 
-## 2. Deploy + env vars (Task 9)
+## 2. Generate the game key
 
 ```powershell
 cd "C:\Users\jazzy\Downloads\slow roads\vercel-app"
+npm run keygen        # prints a base64 key — this is GAME_KEY. Save it.
+```
+
+## 3. Deploy backend + env vars (NO JWT_SECRET anymore)
+
+```powershell
 npx vercel            # first deploy; note the production domain
 npx vercel env add DISCORD_CLIENT_ID
 npx vercel env add DISCORD_CLIENT_SECRET
 npx vercel env add DISCORD_BOT_TOKEN
 npx vercel env add SEGA_GUILD_ID
-npx vercel env add JWT_SECRET        # use a long random string
-npx vercel --prod                    # redeploy so env vars take effect
+npx vercel env add GAME_KEY          # <-- the key from step 2
+npx vercel --prod                     # redeploy so env vars take effect
 ```
 
-Generate a `JWT_SECRET`, e.g.: `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`
+The only endpoint is `POST /api/verify`: it checks SEGA+ membership and, on success,
+returns `GAME_KEY`. Nothing else is served — the game is NOT hosted.
 
-## 3. Point the launcher at your real values
+## 4. Build the encrypted blob (with the SAME key)
+
+```powershell
+cd "C:\Users\jazzy\Downloads\slow roads\vercel-app"
+$env:GAME_KEY = "<paste the same key from step 2>"
+npm run obfuscate     # refresh the obfuscated watermark (optional but recommended)
+npm run build:blob    # -> dist/game.enc  (~15.5 MB)
+```
+
+## 5. Point the launcher at your values + publish the .exe
 
 Edit `launcher/SegaLauncher/AppConfig.cs`:
 - `DiscordClientId` → your real Client ID
-- `VercelBaseUrl`   → your real production domain (if not `https://sega-roads.vercel.app`)
+- `VercelBaseUrl`   → your real production domain (e.g. `https://your-project.vercel.app`)
 
-If your Vercel domain differs, the registered redirect URI (step 3 above) stays the
-same — it's a loopback address, unrelated to the Vercel domain. But the `REDIRECT_URI`
-constant in `vercel-app/api/verify.ts` must match the launcher's exactly (both are
-`http://127.0.0.1:51789/callback` by default — only change if you change the port).
+Then publish a self-contained .exe (so users don't need .NET installed):
 
-Then build the launcher:
 ```powershell
 cd "C:\Users\jazzy\Downloads\slow roads\launcher\SegaLauncher"
-dotnet build -c Release
-# or run it directly:
-dotnet run
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+# output: bin\Release\net10.0-windows\win-x64\publish\SEGA+ Launcher.exe
 ```
 
-## 4. End-to-end test (Task 14)
+(Smaller alternative if your users already have the .NET 10 runtime: drop
+`--self-contained true` for a ~MB-sized framework-dependent build.)
 
-- [ ] **Member:** run launcher → Verify → authorize with an account in SEGA+ → game loads + watermark plays.
-- [ ] **Non-member:** same with an account NOT in SEGA+ → "Members only", no game.
-- [ ] **Direct URL:** open the prod game URL in a fresh browser (no cookie) → `/denied`.
-- [ ] **Expiry:** after 6 h (or temporarily set session exp low in `api/unlock.ts`) → `/denied`, must relaunch.
+## 6. Package for Discord
 
-## What's already done (on branch `sega-launcher`)
+Put these two files together (folder or zip) and post in SEGA+:
+- `SEGA+ Launcher.exe`   (from step 5)
+- `game.enc`             (from step 4, `vercel-app/dist/game.enc`)
 
-- Vercel backend: `api/verify.ts`, `api/unlock.ts` (POST), `middleware.ts` gate, `denied.html`, `unlock.html`, `lib/tokens.ts` + `lib/discord.ts` — **6 unit tests passing**, typechecks clean.
-- Game hosted in `vercel-app/public/` with the fading **SKIDDED BY JUSTONEONTOP / SEGA+ ON TOP** watermark (obfuscated glue); typed-password gate removed.
-- C# WPF launcher in `launcher/SegaLauncher/` — **PKCE tests passing**, builds clean (net10).
-- Security: unlock token travels in the URL fragment + POST (never in logs/Referer).
+They must sit in the **same folder** — the launcher looks for `game.enc` next to itself.
+Optionally also include the `launcher/` source and a **VirusTotal** link (the launcher
+is unobfuscated specifically so scans come back clean).
 
-To merge when you're happy: `git checkout main && git merge sega-launcher`.
+## 7. Test (the part only you can do — needs real Discord)
+
+- [ ] **Member:** run the .exe → Verify → authorize with an account in SEGA+ →
+      "Decrypting…" → browser opens `http://127.0.0.1:<port>` → game plays + watermark.
+- [ ] **Non-member:** same with an account NOT in SEGA+ → "Members only", no decrypt.
+- [ ] **No blob:** move `game.enc` away → "game.enc not found next to the launcher".
+- [ ] **Keep-open:** closing the launcher stops the local server (game stops loading new assets).
+
+> **If a key ever leaks:** generate a new `GAME_KEY` (step 2), update the Vercel env
+> var (step 3), rebuild `game.enc` (step 4), and re-post. Old blobs/keys stop working.
+
+---
+
+## What's already done (branch `sega-launcher`)
+
+- **Backend** (`vercel-app/`): `POST /api/verify` returns the key on SEGA+ membership;
+  `lib/discord.ts` (bot check). **3 unit tests pass**, tsc clean. Game is NOT hosted
+  (plaintext lives in `vercel-app/game-src/`, excluded from deploys).
+- **Blob pipeline** (`vercel-app/scripts/`): `build:blob` (AES-256-GCM + per-file deflate),
+  `keygen`, `make:vector` (cross-language test fixture).
+- **Launcher** (`launcher/SegaLauncher/`): Discord PKCE → key → `GameVault` (in-memory
+  AES-GCM decrypt) → `LocalServer` (serves over localhost, plaintext never on disk).
+  **5 unit tests pass** incl. a Node→C# crypto interop test. Builds clean (net10).
+- **Honest limits:** a verified member can still dump the running game or leak the key;
+  the gate stops *non-members getting the key*. Re-key on leak (above).
+
+To merge when happy: `git checkout main && git merge sega-launcher`.
