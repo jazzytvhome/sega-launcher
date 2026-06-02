@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["api", "lib", "middleware.ts", "tests"]
+  "include": ["api", "lib", "tests"]
 }

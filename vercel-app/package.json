@@ -5,13 +5,12 @@
   "scripts": {
     "test": "vitest run",
     "dev": "vercel dev",
-    "obfuscate": "node scripts/obfuscate.mjs"
-  },
-  "dependencies": {
-    "jose": "^5.9.6"
+    "obfuscate": "node scripts/obfuscate.mjs",
+    "build:blob": "node scripts/build-blob.mjs",
+    "keygen": "node scripts/genkey.mjs",
+    "make:vector": "node scripts/make-test-vector.mjs"
   },
   "devDependencies": {
-    "@vercel/edge": "^1.2.1",
     "@vercel/node": "^3.2.24",
     "javascript-obfuscator": "^4.1.1",
     "typescript": "^5.6.3",

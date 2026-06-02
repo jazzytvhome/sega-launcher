@@ -8,5 +8,5 @@ const out = JavaScriptObfuscator.obfuscate(src, {
   stringArray: true,
   stringArrayEncoding: ["base64"],
 }).getObfuscatedCode();
-writeFileSync("public/_app/skid-watermark.js", out);
-console.log("obfuscated -> public/_app/skid-watermark.js");
+writeFileSync("game-src/_app/skid-watermark.js", out);
+console.log("obfuscated -> game-src/_app/skid-watermark.js");
