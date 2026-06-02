@@ -9,3 +9,5 @@ obj/
 __pycache__/
 dump/
 pretty/
+dist-package/
+SEGA-Plus-Launcher.zip

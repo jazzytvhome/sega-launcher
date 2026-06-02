@@ -40,6 +40,20 @@ npx vercel --prod                     # redeploy so env vars take effect
 The only endpoint is `POST /api/verify`: it checks SEGA+ membership and, on success,
 returns `GAME_KEY`. Nothing else is served — the game is NOT hosted.
 
+## Shortcut: steps 4-6 in one command
+
+Once your key exists and `AppConfig.cs` is set (step 5 below), you can do the whole
+build+publish+zip in one go:
+
+```powershell
+cd "C:\Users\jazzy\Downloads\slow roads"
+.\package.ps1 -Key "<your GAME_KEY>"
+# -> SEGA-Plus-Launcher.zip  (launcher + game.enc + READ ME + source), ~15.6 MB, fits Discord
+# add -SelfContained for a no-runtime-needed 125 MB exe (host it externally)
+```
+
+The manual steps below are still here if you want to run them individually.
+
 ## 4. Build the encrypted blob (with the SAME key)
 
 ```powershell
