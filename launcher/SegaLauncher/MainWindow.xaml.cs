@@ -38,9 +38,11 @@ public partial class MainWindow : Window
 
         if (info != null && VersionGate.IsOutdated(AppConfig.Version, info.min))
         {
-            _downloadUrl = info.url;
-            DownloadButton.Visibility =
-                string.IsNullOrWhiteSpace(info.url) ? Visibility.Collapsed : Visibility.Visible;
+            // Only accept an absolute https link from the server — never file://, cmd:, etc.
+            _downloadUrl = (Uri.TryCreate(info.url, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps)
+                ? u.AbsoluteUri
+                : null;
+            DownloadButton.Visibility = _downloadUrl != null ? Visibility.Visible : Visibility.Collapsed;
             UpdatePanel.Visibility = Visibility.Visible;
         }
         else
@@ -51,7 +53,8 @@ public partial class MainWindow : Window
 
     private void Download_Click(object sender, RoutedEventArgs e)
     {
-        if (!string.IsNullOrWhiteSpace(_downloadUrl))
+        // _downloadUrl is only ever set to a validated https URL (see RunUpdateCheckAsync).
+        if (_downloadUrl != null)
             Process.Start(new ProcessStartInfo(_downloadUrl) { UseShellExecute = true });
     }
 
