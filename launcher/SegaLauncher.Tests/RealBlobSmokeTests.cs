@@ -1,9 +1,6 @@
 using System;
 using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 using SegaLauncher;
 
@@ -14,7 +11,7 @@ using SegaLauncher;
 public class RealBlobSmokeTests
 {
     [Fact]
-    public async Task Real_Blob_Decrypts_And_Serves_The_Game()
+    public void Real_Blob_Decrypts_And_Installs_Clean_Source()
     {
         var blobPath = Environment.GetEnvironmentVariable("SEGA_SMOKE_BLOB");
         var keyB64 = Environment.GetEnvironmentVariable("SEGA_SMOKE_KEY");
@@ -25,18 +22,35 @@ public class RealBlobSmokeTests
 
         Assert.True(vault.Files.ContainsKey("index.html"), "index.html present");
         var indexHtml = Encoding.UTF8.GetString(vault.Files["index.html"]);
-        Assert.Contains("skid-mark", indexHtml); // the watermark survived encryption
+        Assert.Contains("skid-mark", indexHtml); // watermark survived
 
-        using var server = new LocalServer(vault.Files, LocalServer.FreePort());
-        server.Start();
-        using var http = new HttpClient();
+        // The installed source must NOT contain the SEGA+ gate (Discord/Vercel/launcher).
+        foreach (var kv in vault.Files)
+        {
+            var text = TryText(kv.Value);
+            Assert.DoesNotContain("DiscordAuth", text);
+            Assert.DoesNotContain("vercel-app-seven-lake", text);
+            Assert.DoesNotContain("api/verify", text);
+        }
 
-        var served = await http.GetStringAsync(server.BaseUrl);
-        Assert.Contains("<html", served);
-        Assert.Contains("skid-mark", served);
+        // Install to a temp folder and confirm files land on disk.
+        var target = Path.Combine(Path.GetTempPath(), "sega-real-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Installer.WriteTo(vault.Files, target);
+            Assert.True(File.Exists(Path.Combine(target, "index.html")));
+            Assert.True(File.Exists(Path.Combine(target, "alea.min.js")));
+        }
+        finally
+        {
+            if (Directory.Exists(target)) Directory.Delete(target, true);
+        }
+    }
 
-        // a real asset referenced by the page loads
-        var alea = await http.GetAsync(server.BaseUrl + "alea.min.js");
-        Assert.Equal(HttpStatusCode.OK, alea.StatusCode);
+    private static string TryText(byte[] bytes)
+    {
+        // Only scan smallish text-ish files; skip big binaries (images/audio/models).
+        if (bytes.Length > 2_000_000) return "";
+        return Encoding.UTF8.GetString(bytes);
     }
 }

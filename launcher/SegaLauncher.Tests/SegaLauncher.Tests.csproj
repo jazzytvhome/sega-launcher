@@ -13,7 +13,7 @@
     <!-- Pull in the units under test directly (they have no WPF dependencies). -->
     <Compile Include="../SegaLauncher/Pkce.cs" />
     <Compile Include="../SegaLauncher/GameVault.cs" />
-    <Compile Include="../SegaLauncher/LocalServer.cs" />
+    <Compile Include="../SegaLauncher/Installer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fixtures/vector.enc">

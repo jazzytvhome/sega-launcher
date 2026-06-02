@@ -1,32 +1,45 @@
 <Window x:Class="SegaLauncher.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SEGA+ Launcher" Height="380" Width="520"
+        Title="SEGA+ Installer" Height="440" Width="540"
         WindowStartupLocation="CenterScreen" Background="#222"
         ResizeMode="CanMinimize">
     <Grid Margin="32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+
         <TextBlock Grid.Row="0" Text="SEGA+ ON TOP" Foreground="#ff992b"
                    FontSize="26" FontWeight="Bold" HorizontalAlignment="Center"/>
-        <TextBlock Grid.Row="1" Text="Verify your SEGA+ membership to play."
+        <TextBlock Grid.Row="1" Text="Source-code installer - SEGA+ members only."
                    Foreground="#F4F2ED" FontSize="14" Opacity="0.85"
-                   HorizontalAlignment="Center" Margin="0,8,0,0"/>
-        <TextBlock x:Name="StatusText" Grid.Row="2" Text="" Foreground="#F4F2ED"
+                   HorizontalAlignment="Center" Margin="0,8,0,16"/>
+
+        <TextBlock Grid.Row="2" Text="What do you want to install?"
+                   Foreground="#F4F2ED" FontSize="13" Margin="0,0,0,4"/>
+        <ComboBox x:Name="SourceCombo" Grid.Row="3" Height="34" FontSize="14"
+                  DisplayMemberPath="Name" SelectionChanged="SourceCombo_SelectionChanged"/>
+        <TextBlock x:Name="DescText" Grid.Row="4" Foreground="#7e7c76" FontSize="12"
+                   TextWrapping="Wrap" Margin="0,8,0,0"/>
+
+        <TextBlock x:Name="StatusText" Grid.Row="5" Text="" Foreground="#F4F2ED"
                    FontSize="14" TextWrapping="Wrap" TextAlignment="Center"
                    VerticalAlignment="Center"/>
-        <Button x:Name="VerifyButton" Grid.Row="3" Content="Verify with Discord"
+
+        <Button x:Name="InstallButton" Grid.Row="6" Content="Verify with Discord &amp; Install"
                 Height="44" FontSize="15" FontWeight="SemiBold" Cursor="Hand"
                 Background="#5865F2" Foreground="White" BorderThickness="0"
-                Click="VerifyButton_Click"/>
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
-            <TextBlock Text="Game by slowroads.io — all credit to the original.  "
-                       Foreground="#7e7c76" FontSize="11"/>
+                Click="InstallButton_Click"/>
+
+        <StackPanel Grid.Row="7" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+            <TextBlock Text="Full credit: slowroads.io.  " Foreground="#7e7c76" FontSize="11"/>
             <TextBlock>
                 <Hyperlink NavigateUri="https://www.virustotal.com/"
                            RequestNavigate="Hyperlink_RequestNavigate"

@@ -2,82 +2,94 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Navigation;
+using Microsoft.Win32;
 
 namespace SegaLauncher;
 
 public partial class MainWindow : Window
 {
-    private LocalServer? _server;
-
-    public MainWindow() => InitializeComponent();
-
-    private async void VerifyButton_Click(object sender, RoutedEventArgs e)
+    public MainWindow()
     {
-        VerifyButton.IsEnabled = false;
-        StatusText.Text = "Opening Discord… authorize in your browser, then come back.";
+        InitializeComponent();
+        SourceCombo.ItemsSource = Catalog.Items;
+        SourceCombo.SelectedIndex = 0;
+    }
+
+    private void SourceCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        DescText.Text = (SourceCombo.SelectedItem as SourceItem)?.Description ?? "";
+    }
+
+    private async void InstallButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (SourceCombo.SelectedItem is not SourceItem item) return;
+
+        InstallButton.IsEnabled = false;
+        StatusText.Text = "Checking your SEGA+ membership… authorize in your browser.";
 
         var result = await DiscordAuth.RunAsync();
         if (result.Outcome != AuthOutcome.Verified)
         {
             StatusText.Text = result.Message ?? "Verification failed.";
-            VerifyButton.IsEnabled = true;
+            InstallButton.IsEnabled = true;
             return;
         }
 
-        StatusText.Text = "Verified! Decrypting game…";
-        if (!TryStartGame(result.Key!, out var error))
+        // Ask where to install.
+        var dlg = new OpenFolderDialog { Title = $"Choose where to install {item.Name}" };
+        if (dlg.ShowDialog() != true)
+        {
+            StatusText.Text = "Verified — install cancelled (no folder chosen).";
+            InstallButton.IsEnabled = true;
+            return;
+        }
+        var target = Path.Combine(dlg.FolderName, item.Id);
+
+        StatusText.Text = "Verified! Decrypting & installing…";
+        if (!TryInstall(item, result.Key!, target, out var error))
         {
             StatusText.Text = error;
-            VerifyButton.IsEnabled = true;
+            InstallButton.IsEnabled = true;
             return;
         }
 
-        Process.Start(new ProcessStartInfo(_server!.BaseUrl) { UseShellExecute = true });
-        StatusText.Text = "Playing! Keep this launcher open while you play —\nclosing it stops the game.";
-        // Button stays disabled: the server is live for this session.
+        StatusText.Text = $"Installed to:\n{target}";
+        try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"{target}\"")); } catch { }
+        InstallButton.IsEnabled = true;
     }
 
-    private bool TryStartGame(string keyBase64, out string error)
+    private static bool TryInstall(SourceItem item, string keyBase64, string target, out string error)
     {
         error = "";
         byte[] key;
         try { key = Convert.FromBase64String(keyBase64); }
         catch { error = "Server returned a malformed key."; return false; }
 
-        var blobPath = Path.Combine(AppContext.BaseDirectory, "game.enc");
+        var blobPath = Path.Combine(AppContext.BaseDirectory, item.BlobFile);
         if (!File.Exists(blobPath))
         {
-            error = "game.enc not found next to the launcher. Keep them in the same folder.";
+            error = $"{item.BlobFile} not found next to the launcher. Keep them in the same folder.";
             return false;
         }
 
-        GameVault vault;
         try
         {
-            var blob = File.ReadAllBytes(blobPath);
-            vault = GameVault.Open(blob, key);
+            var vault = GameVault.Open(File.ReadAllBytes(blobPath), key);
+            Installer.WriteTo(vault.Files, target);
+            return true;
         }
         catch
         {
-            error = "Couldn't decrypt the game (wrong key or corrupt game.enc).";
+            error = "Install failed (wrong key, corrupt file, or no write permission).";
             return false;
         }
-
-        _server = new LocalServer(vault.Files, LocalServer.FreePort());
-        _server.Start();
-        return true;
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
     {
         Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         e.Handled = true;
-    }
-
-    protected override void OnClosed(EventArgs e)
-    {
-        _server?.Dispose();
-        base.OnClosed(e);
     }
 }

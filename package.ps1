@@ -6,7 +6,8 @@
 #                     Generate one: cd vercel-app; npm run keygen
 #   -SelfContained    ~125 MB exe, no runtime needed by users (too big for Discord;
 #                     host externally). Default is ~222 KB framework-dependent.
-#   -NoSource         Skip bundling the launcher source (included by default).
+#   -IncludeSource    Bundle the launcher source too (OFF by default - shipping the
+#                     launcher source makes the SEGA+ gate easier to reverse).
 #
 # Examples:
 #   $env:GAME_KEY = "<base64>"; .\package.ps1
@@ -15,7 +16,7 @@
 param(
   [string]$Key = $env:GAME_KEY,
   [switch]$SelfContained,
-  [switch]$NoSource
+  [switch]$IncludeSource
 )
 
 $ErrorActionPreference = "Stop"
@@ -77,33 +78,32 @@ if ($SelfContained) {
 }
 
 $readme = @"
-SEGA+ - modded Slow Roads (members only)
+SEGA+ Installer - source code for members
 
-HOW TO PLAY
+HOW TO INSTALL
   1. Keep "SEGA+ Launcher.exe" and "game.enc" in the SAME folder.
   2. Run "SEGA+ Launcher.exe".
-  3. Click "Verify with Discord" and authorize in your browser.
-     You must be a member of the SEGA+ Discord server.
-  4. The game opens in your browser. KEEP THE LAUNCHER OPEN while you play -
-     closing it stops the game.
+  3. Pick a source code from the list, then click "Verify with Discord & Install".
+     Authorize in your browser - you must be a member of the SEGA+ Discord server.
+  4. Choose a folder. The source code installs there and the folder opens.
 
 REQUIREMENTS
   - Windows 10/11 (x64).
   - $runtimeNote
 
 IS THIS A VIRUS?
-  No. The launcher is not obfuscated and its source is included (see \source).
-  All it does: open Discord to check your SEGA+ membership, then decrypt and run
-  the game locally in your own browser. Nothing is installed; nothing is sent
-  anywhere except Discord's own login.
+  No. All the launcher does: open Discord to check your SEGA+ membership, then
+  decrypt and write the source code to a folder you choose. Nothing else is
+  installed; nothing is sent anywhere except Discord's own login. Scan it if you
+  like (link in the launcher).
 
 CREDITS
-  Game by slowroads.io (Anslo) - full credit to the original. This is a private,
-  non-commercial modded build shared within SEGA+.
+  Slow Roads by slowroads.io (Anslo) - full credit to the original. Private,
+  non-commercial, shared within SEGA+.
 "@
 Set-Content -Path (Join-Path $staging "READ ME.txt") -Value $readme -Encoding UTF8
 
-if (-not $NoSource) {
+if ($IncludeSource) {
   $srcDest = Join-Path $staging "source\SegaLauncher"
   New-Item -ItemType Directory -Force $srcDest | Out-Null
   Get-ChildItem $launcher -File | Where-Object { @(".cs", ".xaml", ".csproj") -contains $_.Extension } | Copy-Item -Destination $srcDest
