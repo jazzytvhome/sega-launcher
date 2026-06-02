@@ -27,18 +27,26 @@ npm run keygen        # prints a base64 key — this is GAME_KEY. Save it.
 
 ## 3. Deploy backend + env vars (NO JWT_SECRET anymore)
 
+Fill in your secrets once, then let the helper push them all and deploy:
+
 ```powershell
-npx vercel            # first deploy; note the production domain
-npx vercel env add DISCORD_CLIENT_ID
-npx vercel env add DISCORD_CLIENT_SECRET
-npx vercel env add DISCORD_BOT_TOKEN
-npx vercel env add SEGA_GUILD_ID
-npx vercel env add GAME_KEY          # <-- the key from step 2
-npx vercel --prod                     # redeploy so env vars take effect
+cd "C:\Users\jazzy\Downloads\slow roads\vercel-app"
+copy .env.example .env          # then edit .env and paste in your 5 values
+npx vercel login                # interactive — complete it in Google Chrome
+.\deploy.ps1                     # pushes all env vars + deploys, scope: jazzytvhome
+# (preview first with:  .\deploy.ps1 -DryRun )
 ```
+
+`deploy.ps1` reads `.env`, pushes `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`,
+`DISCORD_BOT_TOKEN`, `SEGA_GUILD_ID`, `GAME_KEY` to Vercel **production** under the
+**jazzytvhome** scope, then deploys. Note the production URL it prints — that goes in
+`AppConfig.cs` (step 5).
 
 The only endpoint is `POST /api/verify`: it checks SEGA+ membership and, on success,
 returns `GAME_KEY`. Nothing else is served — the game is NOT hosted.
+
+> `.env` is gitignored — your real secrets never get committed. Only `.env.example`
+> (the empty template) is in the repo.
 
 ## Shortcut: steps 4-6 in one command
 
