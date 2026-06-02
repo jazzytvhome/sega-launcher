@@ -10,6 +10,10 @@ namespace SegaLauncher;
 
 public partial class MainWindow : Window
 {
+    private enum Mode { Play, Install }
+    private Mode _mode;
+    private LocalServer? _server;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -17,79 +21,126 @@ public partial class MainWindow : Window
         SourceCombo.SelectedIndex = 0;
     }
 
+    // ---- navigation ----
+    private void PlayMode_Click(object sender, RoutedEventArgs e) => EnterWork(Mode.Play);
+    private void InstallMode_Click(object sender, RoutedEventArgs e) => EnterWork(Mode.Install);
+
+    private void EnterWork(Mode mode)
+    {
+        _mode = mode;
+        WorkHeading.Text = mode == Mode.Play ? "Play" : "Install source code";
+        ActionButton.Content = mode == Mode.Play ? "Verify with Discord & Play" : "Verify with Discord & Install";
+        ActionButton.IsEnabled = true;
+        StatusText.Text = "";
+        ModePanel.Visibility = Visibility.Collapsed;
+        WorkPanel.Visibility = Visibility.Visible;
+    }
+
+    private void Back_Click(object sender, RoutedEventArgs e)
+    {
+        _server?.Dispose();
+        _server = null;
+        WorkPanel.Visibility = Visibility.Collapsed;
+        ModePanel.Visibility = Visibility.Visible;
+    }
+
     private void SourceCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         DescText.Text = (SourceCombo.SelectedItem as SourceItem)?.Description ?? "";
     }
 
-    private async void InstallButton_Click(object sender, RoutedEventArgs e)
+    // ---- the action ----
+    private async void Action_Click(object sender, RoutedEventArgs e)
     {
         if (SourceCombo.SelectedItem is not SourceItem item) return;
 
-        InstallButton.IsEnabled = false;
+        ActionButton.IsEnabled = false;
         StatusText.Text = "Checking your SEGA+ membership… authorize in your browser.";
 
         var result = await DiscordAuth.RunAsync();
         if (result.Outcome != AuthOutcome.Verified)
         {
             StatusText.Text = result.Message ?? "Verification failed.";
-            InstallButton.IsEnabled = true;
+            ActionButton.IsEnabled = true;
             return;
         }
 
-        // Ask where to install.
+        // Load blob + tamper check (detect-and-refuse, never destructive).
+        var blobPath = Path.Combine(AppContext.BaseDirectory, item.BlobFile);
+        if (!File.Exists(blobPath))
+        {
+            StatusText.Text = $"{item.BlobFile} not found next to the launcher.";
+            ActionButton.IsEnabled = true;
+            return;
+        }
+        var blob = File.ReadAllBytes(blobPath);
+        if (!Integrity.BlobMatches(blob, BuildInfo.ExpectedBlobSha256))
+        {
+            StatusText.Text = "Tamper detected: this file doesn't match the launcher.\nRe-download the official package.";
+            ActionButton.IsEnabled = true;
+            return;
+        }
+
+        GameVault vault;
+        try
+        {
+            vault = GameVault.Open(blob, Convert.FromBase64String(result.Key!));
+        }
+        catch
+        {
+            StatusText.Text = "Couldn't decrypt (wrong key or corrupt file).";
+            ActionButton.IsEnabled = true;
+            return;
+        }
+
+        if (_mode == Mode.Play) StartPlay(vault);
+        else DoInstall(vault, item);
+    }
+
+    private void StartPlay(GameVault vault)
+    {
+        _server?.Dispose();
+        _server = new LocalServer(vault.Files, LocalServer.FreePort());
+        _server.Start();
+        Process.Start(new ProcessStartInfo(_server.BaseUrl) { UseShellExecute = true });
+        StatusText.Text = "Playing! Keep this launcher open while you play —\nclosing it stops the game.";
+        // ActionButton stays disabled: the server is live this session.
+    }
+
+    private void DoInstall(GameVault vault, SourceItem item)
+    {
         var dlg = new OpenFolderDialog { Title = $"Choose where to install {item.Name}" };
         if (dlg.ShowDialog() != true)
         {
             StatusText.Text = "Verified — install cancelled (no folder chosen).";
-            InstallButton.IsEnabled = true;
+            ActionButton.IsEnabled = true;
             return;
         }
         var target = Path.Combine(dlg.FolderName, item.Id);
-
-        StatusText.Text = "Verified! Decrypting & installing…";
-        if (!TryInstall(item, result.Key!, target, out var error))
-        {
-            StatusText.Text = error;
-            InstallButton.IsEnabled = true;
-            return;
-        }
-
-        StatusText.Text = $"Installed to:\n{target}";
-        try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"{target}\"")); } catch { }
-        InstallButton.IsEnabled = true;
-    }
-
-    private static bool TryInstall(SourceItem item, string keyBase64, string target, out string error)
-    {
-        error = "";
-        byte[] key;
-        try { key = Convert.FromBase64String(keyBase64); }
-        catch { error = "Server returned a malformed key."; return false; }
-
-        var blobPath = Path.Combine(AppContext.BaseDirectory, item.BlobFile);
-        if (!File.Exists(blobPath))
-        {
-            error = $"{item.BlobFile} not found next to the launcher. Keep them in the same folder.";
-            return false;
-        }
-
         try
         {
-            var vault = GameVault.Open(File.ReadAllBytes(blobPath), key);
             Installer.WriteTo(vault.Files, target);
-            return true;
         }
         catch
         {
-            error = "Install failed (wrong key, corrupt file, or no write permission).";
-            return false;
+            StatusText.Text = "Install failed (no write permission to that folder?).";
+            ActionButton.IsEnabled = true;
+            return;
         }
+        StatusText.Text = $"Installed to:\n{target}";
+        try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"{target}\"")); } catch { }
+        ActionButton.IsEnabled = true;
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
     {
         Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
         e.Handled = true;
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        _server?.Dispose();
+        base.OnClosed(e);
     }
 }

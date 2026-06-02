@@ -45,6 +45,16 @@ describe("verifyMembership", () => {
     expect(res).toEqual({ ok: false, reason: "not_member" });
   });
 
+  it("returns blacklisted for a denylisted user (before the guild lookup)", async () => {
+    const fetchMock = mockFetchSequence([
+      { status: 200, body: { access_token: "atok" } },
+      { status: 200, body: { id: "666", username: "banned" } },
+    ]);
+    const res = await verifyMembership("authcode", "verifier", { ...ENV, blacklist: ["666"] });
+    expect(res).toEqual({ ok: false, reason: "blacklisted" });
+    expect(fetchMock).toHaveBeenCalledTimes(2); // never reached the guild-member call
+  });
+
   it("returns discord_error when token exchange fails", async () => {
     mockFetchSequence([{ status: 400, body: { error: "invalid_grant" } }]);
     const res = await verifyMembership("badcode", "verifier", ENV);

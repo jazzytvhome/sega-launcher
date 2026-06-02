@@ -50,10 +50,17 @@ try {
 $blob = Join-Path $vercel "dist\game.enc"
 if (-not (Test-Path $blob)) { Write-Error "game.enc was not produced." }
 
-# --- 2. Publish the launcher ----------------------------------------------
+# --- 2. Publish the launcher (stamped with the blob hash for the integrity check) ---
 Write-Host "==> Publishing launcher..." -ForegroundColor Cyan
 $pub = Join-Path $launcher "bin\package-publish"
 if (Test-Path $pub) { Remove-Item -Recurse -Force $pub }
+
+$hash = (Get-FileHash $blob -Algorithm SHA256).Hash.ToLower()
+$buildInfoPath = Join-Path $launcher "BuildInfo.cs"
+$buildInfoOrig = Get-Content $buildInfoPath -Raw
+((Get-Content $buildInfoPath -Raw) -replace 'ExpectedBlobSha256 = ".*?"', "ExpectedBlobSha256 = `"$hash`"") |
+  Set-Content -Path $buildInfoPath -Encoding UTF8
+
 Push-Location $launcher
 try {
   if ($SelfContained) {
@@ -61,7 +68,10 @@ try {
   } else {
     dotnet publish -c Release -o $pub
   }
-} finally { Pop-Location }
+} finally {
+  Pop-Location
+  Set-Content -Path $buildInfoPath -Value $buildInfoOrig -Encoding UTF8   # restore dev sentinel
+}
 
 # --- 3. Assemble staging folder -------------------------------------------
 Write-Host "==> Assembling package..." -ForegroundColor Cyan

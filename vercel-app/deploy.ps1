@@ -64,6 +64,15 @@ foreach ($k in $keys) {
   $vals[$k] | npx vercel env add $k production @scopeArgs
 }
 
+# --- optional vars (pushed only if set in .env) ---
+foreach ($k in @("BLACKLIST")) {
+  if ($vals.ContainsKey($k) -and $vals[$k]) {
+    Write-Host "==> $k (optional)" -ForegroundColor Cyan
+    try { npx vercel env rm $k production --yes @scopeArgs 2>$null | Out-Null } catch {}
+    $vals[$k] | npx vercel env add $k production @scopeArgs
+  }
+}
+
 # --- deploy ---
 npx vercel deploy --prod @scopeArgs
 

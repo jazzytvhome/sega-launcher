@@ -4,11 +4,12 @@ export interface DiscordEnv {
   botToken: string;
   guildId: string;
   redirectUri: string;
+  blacklist?: string[];
 }
 
 export type VerifyResult =
   | { ok: true; user: { id: string; name: string } }
-  | { ok: false; reason: "not_member" | "discord_error" };
+  | { ok: false; reason: "not_member" | "discord_error" | "blacklisted" };
 
 const API = "https://discord.com/api";
 
@@ -39,6 +40,9 @@ export async function verifyMembership(
   });
   if (!meRes.ok) return { ok: false, reason: "discord_error" };
   const me = (await meRes.json()) as { id: string; username: string };
+
+  // 2b. Reject blacklisted accounts before spending a guild lookup.
+  if (env.blacklist?.includes(me.id)) return { ok: false, reason: "blacklisted" };
 
   // 3. Ask the bot whether the user is a member of SEGA+.
   const memberRes = await fetch(`${API}/guilds/${env.guildId}/members/${me.id}`, {

@@ -18,10 +18,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     botToken: process.env.DISCORD_BOT_TOKEN!,
     guildId: process.env.SEGA_GUILD_ID!,
     redirectUri: REDIRECT_URI,
+    blacklist: (process.env.BLACKLIST ?? "").split(",").map((s) => s.trim()).filter(Boolean),
   };
 
   const result = await verifyMembership(code, code_verifier, env);
-  if (!result.ok) return res.status(result.reason === "not_member" ? 403 : 502).json(result);
+  if (!result.ok) {
+    const status = result.reason === "not_member" || result.reason === "blacklisted" ? 403 : 502;
+    return res.status(status).json(result);
+  }
 
   const key = process.env.GAME_KEY;
   if (!key) return res.status(500).json({ ok: false, reason: "server_misconfig" });

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SegaLauncher;
 
-public enum AuthOutcome { Verified, NotMember, Cancelled, ServerError, PortBusy }
+public enum AuthOutcome { Verified, NotMember, Blacklisted, Cancelled, ServerError, PortBusy }
 
 public sealed record AuthResult(AuthOutcome Outcome, string? Key = null, string? Message = null);
 
@@ -63,8 +63,14 @@ public static class DiscordAuth
                 new { code, code_verifier = pkce.Verifier }, ct);
 
             if (resp.StatusCode == HttpStatusCode.Forbidden)
+            {
+                var fb = await resp.Content.ReadFromJsonAsync<VerifyResponse>(cancellationToken: ct);
+                if (fb?.reason == "blacklisted")
+                    return new AuthResult(AuthOutcome.Blacklisted,
+                        Message: "This account is blacklisted from SEGA+ installs.");
                 return new AuthResult(AuthOutcome.NotMember,
                     Message: "Members only — make sure you're in the SEGA+ server.");
+            }
             if (!resp.IsSuccessStatusCode)
                 return new AuthResult(AuthOutcome.ServerError,
                     Message: "Server config issue — contact a SEGA+ admin.");
@@ -94,5 +100,5 @@ public static class DiscordAuth
         res.OutputStream.Close();
     }
 
-    private sealed record VerifyResponse(bool ok, string? key);
+    private sealed record VerifyResponse(bool ok, string? key, string? reason);
 }
