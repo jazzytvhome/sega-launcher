@@ -43,23 +43,33 @@ personal account (the default), then deploys. (For a Vercel **team**, pass
 `-Scope <team-name>` — a personal account is rejected by `--scope`.) Note the production URL it prints — that goes in
 `AppConfig.cs` (step 5).
 
-The only endpoint is `POST /api/verify`: it checks SEGA+ membership and, on success,
-returns `GAME_KEY`. Nothing else is served — the game is NOT hosted.
+`POST /api/verify` checks SEGA+ membership and, on success, returns the `GAME_KEY`
+**plus a 2-minute download token**. The encrypted `game.enc` is served from Vercel but
+**gated by edge middleware** — only a request carrying that token can fetch it. So the
+launcher downloads the blob itself; you hand out just the exe.
 
 > `.env` is gitignored — your real secrets never get committed. Only `.env.example`
-> (the empty template) is in the repo.
+> (the empty template) is in the repo. The download token reuses `GAME_KEY` as its
+> signing secret, so there's **no new env var** to set.
 
-## Shortcut: steps 4-6 in one command
+## Build + ship (the whole thing in two commands)
 
-Once your key exists and `AppConfig.cs` is set (step 5 below), you can do the whole
-build+publish+zip in one go:
+Once `AppConfig.cs` has your real Client ID + Vercel URL (step 5):
 
 ```powershell
 cd "C:\Users\jazzy\Downloads\slow roads"
-.\package.ps1 -Key "<your GAME_KEY>"
-# -> SEGA-Plus-Launcher.zip  (launcher + game.enc + READ ME + source), ~15.6 MB, fits Discord
-# add -SelfContained for a no-runtime-needed 125 MB exe (host it externally)
+.\package.ps1 -Key "<your GAME_KEY>"   # builds game.enc, stages it for Vercel, builds the standalone exe
+#   -> "SEGA+ Launcher.exe" (~132 MB, one self-contained file)
+#   -> also stages vercel-app/public/game.enc
+#   (add -FrameworkDependent for a tiny multi-file build that needs the .NET runtime)
+
+cd vercel-app
+.\deploy.ps1                            # publishes game.enc + the backend to Vercel
 ```
+
+Then **hand out just `SEGA+ Launcher.exe`**. It verifies SEGA+, downloads `game.enc`
+from Vercel, and Plays or Installs — nothing else to distribute. (132 MB is over
+Discord's upload limit, so host the exe on a link, or use `-FrameworkDependent`.)
 
 The manual steps below are still here if you want to run them individually.
 
