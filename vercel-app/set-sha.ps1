@@ -1,6 +1,6 @@
 # Adds LATEST_SHA256 to Vercel (production) and redeploys.
 # Run from vercel-app:  .\set-sha.ps1
-$sha = "b098c908f5579ef77683f9272ac5aa8b4c50d095ee1c889cc1b28eac7fc8a2bc"
+$sha = "1bf2cad0282ff53989df2012d54a451377a41bb19c01478f7b79bdf533b6dd7c"
 
 Write-Host "Removing any existing LATEST_SHA256 (ignore 'not found')..." -ForegroundColor Cyan
 try { npx vercel env rm LATEST_SHA256 production --yes } catch {}
