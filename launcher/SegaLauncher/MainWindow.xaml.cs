@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Navigation;
@@ -14,33 +15,40 @@ namespace SegaLauncher;
 public partial class MainWindow : Window
 {
     private enum Mode { Play, Install }
-    private Mode _mode;
     private LocalServer? _server;
     private string? _downloadUrl;
 
     public MainWindow()
     {
         InitializeComponent();
-        SourceCombo.ItemsSource = Catalog.Items;
-        SourceCombo.SelectedIndex = 0;
+        SourceList.ItemsSource = Catalog.Items;
+        SourceList.SelectedIndex = 0;
+        VersionLabel.Text = "v" + AppConfig.Version;
     }
 
-    // ---- update gate (runs first, before anything else) ----
+    // ---- window chrome ----
+    private void TitleBar_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ButtonState == MouseButtonState.Pressed) DragMove();
+    }
+
+    private void Min_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    // ---- update gate (runs first) ----
     private async void Window_Loaded(object sender, RoutedEventArgs e) => await RunUpdateCheckAsync();
 
     private async Task RunUpdateCheckAsync()
     {
         CheckPanel.Visibility = Visibility.Visible;
         UpdatePanel.Visibility = Visibility.Collapsed;
-        ModePanel.Visibility = Visibility.Collapsed;
-        WorkPanel.Visibility = Visibility.Collapsed;
+        MainPanel.Visibility = Visibility.Collapsed;
 
         var info = await Updater.FetchAsync();
         CheckPanel.Visibility = Visibility.Collapsed;
 
         if (info != null && VersionGate.IsOutdated(AppConfig.Version, info.min))
         {
-            // Only accept an absolute https link from the server — never file://, cmd:, etc.
             _downloadUrl = (Uri.TryCreate(info.url, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps)
                 ? u.AbsoluteUri
                 : null;
@@ -49,88 +57,60 @@ public partial class MainWindow : Window
         }
         else
         {
-            FadeIn(ModePanel);
+            FadeIn(MainPanel);
         }
     }
 
     private void Download_Click(object sender, RoutedEventArgs e)
     {
-        // _downloadUrl is only ever set to a validated https URL (see RunUpdateCheckAsync).
         if (_downloadUrl != null)
             Process.Start(new ProcessStartInfo(_downloadUrl) { UseShellExecute = true });
     }
 
     private async void Recheck_Click(object sender, RoutedEventArgs e) => await RunUpdateCheckAsync();
 
-    // Reveal a panel with a quick fade + upward slide.
-    private static void FadeIn(FrameworkElement el)
+    // ---- source selection ----
+    private void SourceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        el.Visibility = Visibility.Visible;
-        var tt = new TranslateTransform(0, 12);
-        el.RenderTransform = tt;
-        el.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
-        tt.BeginAnimation(TranslateTransform.YProperty,
-            new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(260))
-            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
+        if (SourceList.SelectedItem is SourceItem item)
+        {
+            SourceName.Text = item.Name;
+            DescText.Text = item.Description;
+        }
     }
 
-    // ---- navigation ----
-    private void PlayMode_Click(object sender, RoutedEventArgs e) => EnterWork(Mode.Play);
-    private void InstallMode_Click(object sender, RoutedEventArgs e) => EnterWork(Mode.Install);
+    // ---- actions ----
+    private async void Play_Click(object sender, RoutedEventArgs e) => await DoFlowAsync(Mode.Play);
+    private async void Install_Click(object sender, RoutedEventArgs e) => await DoFlowAsync(Mode.Install);
 
-    private void EnterWork(Mode mode)
+    private async Task DoFlowAsync(Mode mode)
     {
-        _mode = mode;
-        WorkHeading.Text = mode == Mode.Play ? "Play" : "Install source code";
-        ActionButton.Content = mode == Mode.Play ? "Verify with Discord & Play" : "Verify with Discord & Install";
-        ActionButton.IsEnabled = true;
-        StatusText.Text = "";
-        ModePanel.Visibility = Visibility.Collapsed;
-        FadeIn(WorkPanel);
-    }
+        if (SourceList.SelectedItem is not SourceItem item) return;
 
-    private void Back_Click(object sender, RoutedEventArgs e)
-    {
-        _server?.Dispose();
-        _server = null;
-        WorkPanel.Visibility = Visibility.Collapsed;
-        FadeIn(ModePanel);
-    }
-
-    private void SourceCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        DescText.Text = (SourceCombo.SelectedItem as SourceItem)?.Description ?? "";
-    }
-
-    // ---- the action ----
-    private async void Action_Click(object sender, RoutedEventArgs e)
-    {
-        if (SourceCombo.SelectedItem is not SourceItem item) return;
-
-        ActionButton.IsEnabled = false;
+        SetBusy(true);
         StatusText.Text = "Checking your SEGA+ membership… authorize in your browser.";
 
         var result = await DiscordAuth.RunAsync();
         if (result.Outcome != AuthOutcome.Verified)
         {
             StatusText.Text = result.Message ?? "Verification failed.";
-            ActionButton.IsEnabled = true;
+            SetBusy(false);
             return;
         }
 
-        // Load blob + tamper check (detect-and-refuse, never destructive).
+        // load blob + tamper check (detect-and-refuse, never destructive)
         var blobPath = Path.Combine(AppContext.BaseDirectory, item.BlobFile);
         if (!File.Exists(blobPath))
         {
             StatusText.Text = $"{item.BlobFile} not found next to the launcher.";
-            ActionButton.IsEnabled = true;
+            SetBusy(false);
             return;
         }
         var blob = File.ReadAllBytes(blobPath);
         if (!Integrity.BlobMatches(blob, BuildInfo.ExpectedBlobSha256))
         {
             StatusText.Text = "Tamper detected: this file doesn't match the launcher.\nRe-download the official package.";
-            ActionButton.IsEnabled = true;
+            SetBusy(false);
             return;
         }
 
@@ -142,12 +122,14 @@ public partial class MainWindow : Window
         catch
         {
             StatusText.Text = "Couldn't decrypt (wrong key or corrupt file).";
-            ActionButton.IsEnabled = true;
+            SetBusy(false);
             return;
         }
 
-        if (_mode == Mode.Play) StartPlay(vault);
+        if (mode == Mode.Play) StartPlay(vault);
         else DoInstall(vault, item);
+
+        SetBusy(false);
     }
 
     private void StartPlay(GameVault vault)
@@ -157,7 +139,6 @@ public partial class MainWindow : Window
         _server.Start();
         Process.Start(new ProcessStartInfo(_server.BaseUrl) { UseShellExecute = true });
         StatusText.Text = "Playing! Keep this launcher open while you play —\nclosing it stops the game.";
-        // ActionButton stays disabled: the server is live this session.
     }
 
     private void DoInstall(GameVault vault, SourceItem item)
@@ -166,7 +147,6 @@ public partial class MainWindow : Window
         if (dlg.ShowDialog() != true)
         {
             StatusText.Text = "Verified — install cancelled (no folder chosen).";
-            ActionButton.IsEnabled = true;
             return;
         }
         var target = Path.Combine(dlg.FolderName, item.Id);
@@ -177,12 +157,28 @@ public partial class MainWindow : Window
         catch
         {
             StatusText.Text = "Install failed (no write permission to that folder?).";
-            ActionButton.IsEnabled = true;
             return;
         }
         StatusText.Text = $"Installed to:\n{target}";
         try { Process.Start(new ProcessStartInfo("explorer.exe", $"\"{target}\"")); } catch { }
-        ActionButton.IsEnabled = true;
+    }
+
+    private void SetBusy(bool busy)
+    {
+        PlayButton.IsEnabled = !busy;
+        InstallButton.IsEnabled = !busy;
+    }
+
+    // reveal a panel with a quick fade + upward slide
+    private static void FadeIn(FrameworkElement el)
+    {
+        el.Visibility = Visibility.Visible;
+        var tt = new TranslateTransform(0, 12);
+        el.RenderTransform = tt;
+        el.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(220)));
+        tt.BeginAnimation(TranslateTransform.YProperty,
+            new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(260))
+            { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
     }
 
     private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
