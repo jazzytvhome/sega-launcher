@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyMembership, type DiscordEnv } from "../lib/discord.js";
+import { signDownload } from "../lib/tokens.js";
 
 const REDIRECT_URI = "http://127.0.0.1:51789/callback";
 
@@ -30,6 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const key = process.env.GAME_KEY;
   if (!key) return res.status(500).json({ ok: false, reason: "server_misconfig" });
 
-  // key is base64 of the 32-byte AES-256 key used to build game.enc.
-  return res.status(200).json({ ok: true, key });
+  // key decrypts game.enc; dl is a 2-min token that authorizes downloading it.
+  const dl = await signDownload(result.user.id);
+  return res.status(200).json({ ok: true, key, dl });
 }

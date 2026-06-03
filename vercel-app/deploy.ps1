@@ -41,6 +41,10 @@ foreach ($line in Get-Content $EnvFile) {
 $missing = $keys | Where-Object { -not $vals[$_] }
 if ($missing) { Write-Error "Missing values in ${EnvFile}: $($missing -join ', ')" }
 
+if (-not (Test-Path (Join-Path $PSScriptRoot "public\game.enc"))) {
+  Write-Warning "public/game.enc is missing - the launcher's download will 404. Run ..\package.ps1 first to stage it."
+}
+
 Write-Host "Vercel scope: $scopeLabel" -ForegroundColor Cyan
 Write-Host "(If this fails with an auth error, run 'npx vercel login' and complete it in Google Chrome.)" -ForegroundColor Yellow
 
