@@ -7,5 +7,6 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
     min: process.env.MIN_VERSION ?? "0.0.0",
     latest: process.env.LATEST_VERSION ?? process.env.MIN_VERSION ?? "0.0.0",
     url: process.env.DOWNLOAD_URL ?? "",
+    sha256: process.env.LATEST_SHA256 ?? "", // pins the exact exe the auto-updater will run
   });
 }

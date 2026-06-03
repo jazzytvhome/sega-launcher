@@ -13,11 +13,12 @@ namespace SegaLauncher;
 /// </summary>
 public static class UpdateInstaller
 {
-    // Only auto-execute an update from a real https github.com link.
+    // Only auto-execute an update from THIS repo's GitHub releases (https + host + path pinned).
     public static bool IsTrustedUrl(string? url) =>
         Uri.TryCreate(url, UriKind.Absolute, out var u)
         && u.Scheme == Uri.UriSchemeHttps
-        && u.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase);
+        && u.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+        && u.AbsolutePath.StartsWith(AppConfig.UpdateRepoPathPrefix, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Delete a leftover .old backup from a previous update (call at startup).</summary>
     public static void CleanupOldBackup()
@@ -36,7 +37,7 @@ public static class UpdateInstaller
     /// Download from <paramref name="url"/>, swap the running exe, relaunch.
     /// Returns false and changes nothing if the URL is untrusted or the swap fails.
     /// </summary>
-    public static async Task<bool> RunAsync(string url, Action<double>? onProgress = null)
+    public static async Task<bool> RunAsync(string url, string? expectedSha256 = null, Action<double>? onProgress = null)
     {
         if (!IsTrustedUrl(url)) return false;
 
@@ -65,10 +66,23 @@ public static class UpdateInstaller
                 }
             }
 
-            // sanity: a Windows exe starts with "MZ"
+            // sanity: a Windows exe starts with "MZ" (NOT a security check)
             using (var fs = File.OpenRead(tmp))
             {
                 if (fs.Length < 2 || fs.ReadByte() != 'M' || fs.ReadByte() != 'Z')
+                {
+                    File.Delete(tmp);
+                    return false;
+                }
+            }
+
+            // integrity: if the server pinned a SHA-256, the download MUST match it
+            if (!string.IsNullOrWhiteSpace(expectedSha256))
+            {
+                string actual;
+                using (var fs = File.OpenRead(tmp))
+                    actual = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fs)).ToLowerInvariant();
+                if (!actual.Equals(expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
                 {
                     File.Delete(tmp);
                     return false;

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace SegaLauncher;
 
-public sealed record VersionInfo(string? min, string? latest, string? url);
+public sealed record VersionInfo(string? min, string? latest, string? url, string? sha256);
 
 public static class Updater
 {

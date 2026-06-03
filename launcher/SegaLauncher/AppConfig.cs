@@ -11,5 +11,8 @@ public static class AppConfig
     // so older launchers show "update needed".
     public const string Version = "1.0.2";
 
+    // Auto-update will only download+run an exe from THIS GitHub repo's releases.
+    public const string UpdateRepoPathPrefix = "/jazzytvhome/sega-launcher/releases/";
+
     public static string RedirectUri => $"http://127.0.0.1:{LoopbackPort}/callback";
 }

@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private enum Mode { Play, Install }
     private LocalServer? _server;
     private string? _downloadUrl;
+    private string? _updateSha;
 
     public MainWindow()
     {
@@ -53,6 +54,7 @@ public partial class MainWindow : Window
             _downloadUrl = (Uri.TryCreate(info.url, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps)
                 ? u.AbsoluteUri
                 : null;
+            _updateSha = info.sha256;
             await AutoUpdateAsync();
         }
         else
@@ -74,6 +76,7 @@ public partial class MainWindow : Window
         if (_downloadUrl != null)
             ok = await UpdateInstaller.RunAsync(
                 _downloadUrl,
+                _updateSha,
                 p => Dispatcher.Invoke(() => UpdateProgress.Value = p * 100));
 
         if (ok)
