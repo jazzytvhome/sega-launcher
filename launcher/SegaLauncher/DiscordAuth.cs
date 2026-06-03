@@ -11,7 +11,7 @@ namespace SegaLauncher;
 
 public enum AuthOutcome { Verified, NotMember, Blacklisted, Cancelled, ServerError, PortBusy }
 
-public sealed record AuthResult(AuthOutcome Outcome, string? Key = null, string? Message = null);
+public sealed record AuthResult(AuthOutcome Outcome, string? Key = null, string? Dl = null, string? Message = null);
 
 public static class DiscordAuth
 {
@@ -76,10 +76,10 @@ public static class DiscordAuth
                     Message: "Server config issue — contact a SEGA+ admin.");
 
             var body = await resp.Content.ReadFromJsonAsync<VerifyResponse>(cancellationToken: ct);
-            if (body is null || !body.ok || string.IsNullOrEmpty(body.key))
+            if (body is null || !body.ok || string.IsNullOrEmpty(body.key) || string.IsNullOrEmpty(body.dl))
                 return new AuthResult(AuthOutcome.ServerError, Message: "Unexpected server response.");
 
-            return new AuthResult(AuthOutcome.Verified, body.key);
+            return new AuthResult(AuthOutcome.Verified, body.key, body.dl);
         }
         catch (HttpRequestException)
         {
@@ -100,5 +100,5 @@ public static class DiscordAuth
         res.OutputStream.Close();
     }
 
-    private sealed record VerifyResponse(bool ok, string? key, string? reason);
+    private sealed record VerifyResponse(bool ok, string? key, string? dl, string? reason);
 }

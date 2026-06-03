@@ -98,18 +98,16 @@ public partial class MainWindow : Window
             return;
         }
 
-        // load blob + tamper check (detect-and-refuse, never destructive)
-        var blobPath = Path.Combine(AppContext.BaseDirectory, item.BlobFile);
-        if (!File.Exists(blobPath))
+        // download the encrypted blob from Vercel (gated by the 2-min token)
+        StatusText.Text = "Verified! Downloading source… (~15 MB)";
+        byte[] blob;
+        try
         {
-            StatusText.Text = $"{item.BlobFile} not found next to the launcher.";
-            SetBusy(false);
-            return;
+            blob = await Downloader.FetchBlobAsync(result.Dl!, item.BlobFile);
         }
-        var blob = File.ReadAllBytes(blobPath);
-        if (!Integrity.BlobMatches(blob, BuildInfo.ExpectedBlobSha256))
+        catch
         {
-            StatusText.Text = "Tamper detected: this file doesn't match the launcher.\nRe-download the official package.";
+            StatusText.Text = "Download failed — check your connection and try again.";
             SetBusy(false);
             return;
         }
