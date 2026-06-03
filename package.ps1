@@ -70,7 +70,10 @@ if ($FrameworkDependent) {
   $outExe = Join-Path $root $exeName
   Copy-Item (Join-Path $pub $exeName) $outExe -Force
   $mb = [math]::Round((Get-Item $outExe).Length / 1MB, 1)
+  $sha = (Get-FileHash $outExe -Algorithm SHA256).Hash.ToLower()
   Write-Host "Standalone exe -> $outExe ($mb MB)" -ForegroundColor Green
+  Write-Host "SHA-256: $sha" -ForegroundColor Green
+  Write-Host "(set LATEST_SHA256 in .env to this so auto-update accepts it)" -ForegroundColor Yellow
 }
 Write-Host ""
 Write-Host "NEXT: cd vercel-app; .\deploy.ps1   (publishes game.enc + backend to Vercel)" -ForegroundColor Yellow
