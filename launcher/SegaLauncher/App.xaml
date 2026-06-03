@@ -4,43 +4,42 @@
              StartupUri="MainWindow.xaml">
     <Application.Resources>
 
-        <!-- modern cool-dark palette (change Accent to re-theme) -->
-        <SolidColorBrush x:Key="Win"     Color="#141619"/>
-        <SolidColorBrush x:Key="Side"    Color="#181B20"/>
-        <SolidColorBrush x:Key="Row"     Color="#222730"/>
-        <SolidColorBrush x:Key="RowHi"   Color="#2B313B"/>
-        <SolidColorBrush x:Key="Stroke"  Color="#2A2F38"/>
-        <SolidColorBrush x:Key="Text"    Color="#F3F4F6"/>
-        <SolidColorBrush x:Key="Muted"   Color="#9AA0AB"/>
-        <SolidColorBrush x:Key="Accent"  Color="#FF9A2E"/>
-        <SolidColorBrush x:Key="Danger"  Color="#E0544E"/>
+        <!-- Material 3 dark palette -->
+        <SolidColorBrush x:Key="Win"      Color="#141218"/>
+        <SolidColorBrush x:Key="Side"     Color="#1D1B20"/>
+        <SolidColorBrush x:Key="Row"      Color="#211F26"/>
+        <SolidColorBrush x:Key="RowHi"    Color="#2B2930"/>
+        <SolidColorBrush x:Key="Stroke"   Color="#49454F"/>
+        <SolidColorBrush x:Key="Text"     Color="#E6E0E9"/>
+        <SolidColorBrush x:Key="Muted"    Color="#938F99"/>
+        <SolidColorBrush x:Key="Accent"   Color="#D0BCFF"/>
+        <SolidColorBrush x:Key="OnAccent" Color="#381E72"/>
+        <SolidColorBrush x:Key="Tonal"    Color="#4A4458"/>
+        <SolidColorBrush x:Key="OnTonal"  Color="#E8DEF8"/>
+        <SolidColorBrush x:Key="Danger"   Color="#F2B8B5"/>
 
         <!-- window chrome: minimize -->
         <Style x:Key="Chrome" TargetType="Button">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="28"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="30"/>
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="7" Padding="0">
-                            <Border.Background><SolidColorBrush x:Name="bg" Color="#00222730"/></Border.Background>
+                        <Border x:Name="b" CornerRadius="15">
+                            <Border.Background><SolidColorBrush x:Name="bg" Color="#002B2930"/></Border.Background>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="{StaticResource Text}"/>
                                 <Trigger.EnterActions>
-                                    <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#222730" Duration="0:0:0.15"/>
-                                    </Storyboard></BeginStoryboard>
+                                    <BeginStoryboard><Storyboard><ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#2B2930" Duration="0:0:0.15"/></Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
-                                    <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#00222730" Duration="0:0:0.2"/>
-                                    </Storyboard></BeginStoryboard>
+                                    <BeginStoryboard><Storyboard><ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#002B2930" Duration="0:0:0.2"/></Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -49,32 +48,28 @@
             </Setter>
         </Style>
 
-        <!-- window chrome: close (smooth red) -->
+        <!-- window chrome: close -->
         <Style x:Key="ChromeClose" TargetType="Button">
-            <Setter Property="Width" Value="30"/>
-            <Setter Property="Height" Value="28"/>
+            <Setter Property="Width" Value="32"/>
+            <Setter Property="Height" Value="30"/>
             <Setter Property="Foreground" Value="{StaticResource Muted}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="7">
-                            <Border.Background><SolidColorBrush x:Name="bg" Color="#00E0544E"/></Border.Background>
+                        <Border x:Name="b" CornerRadius="15">
+                            <Border.Background><SolidColorBrush x:Name="bg" Color="#00F2B8B5"/></Border.Background>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="Foreground" Value="#3B0907"/>
                                 <Trigger.EnterActions>
-                                    <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#E0544E" Duration="0:0:0.15"/>
-                                    </Storyboard></BeginStoryboard>
+                                    <BeginStoryboard><Storyboard><ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#F2B8B5" Duration="0:0:0.15"/></Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
-                                    <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#00E0544E" Duration="0:0:0.2"/>
-                                    </Storyboard></BeginStoryboard>
+                                    <BeginStoryboard><Storyboard><ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#00F2B8B5" Duration="0:0:0.2"/></Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -83,7 +78,7 @@
             </Setter>
         </Style>
 
-        <!-- sidebar source item (smooth hover) -->
+        <!-- sidebar source item -->
         <Style x:Key="SourceTab" TargetType="ListBoxItem">
             <Setter Property="Foreground" Value="{StaticResource Text}"/>
             <Setter Property="FontSize" Value="13"/>
@@ -91,10 +86,10 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="ListBoxItem">
-                        <Border x:Name="bd" CornerRadius="9" Padding="10,9">
-                            <Border.Background><SolidColorBrush x:Name="bg" Color="#00222730"/></Border.Background>
+                        <Border x:Name="bd" CornerRadius="20" Padding="12,9">
+                            <Border.Background><SolidColorBrush x:Name="bg" Color="#00211F26"/></Border.Background>
                             <Grid>
-                                <Rectangle x:Name="bar" Width="3" Height="15" RadiusX="2" RadiusY="2"
+                                <Rectangle x:Name="bar" Width="3" Height="16" RadiusX="2" RadiusY="2"
                                            HorizontalAlignment="Left" Fill="{StaticResource Accent}" Opacity="0"/>
                                 <ContentPresenter Margin="12,0,0,0" VerticalAlignment="Center"/>
                             </Grid>
@@ -102,22 +97,16 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Trigger.EnterActions>
-                                    <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#222730" Duration="0:0:0.16"/>
-                                    </Storyboard></BeginStoryboard>
+                                    <BeginStoryboard><Storyboard><ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#211F26" Duration="0:0:0.16"/></Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
-                                    <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#00222730" Duration="0:0:0.22"/>
-                                    </Storyboard></BeginStoryboard>
+                                    <BeginStoryboard><Storyboard><ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#00211F26" Duration="0:0:0.22"/></Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="bar" Property="Opacity" Value="1"/>
                                 <Trigger.EnterActions>
-                                    <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#33FF9A2E" Duration="0:0:0.2"/>
-                                    </Storyboard></BeginStoryboard>
+                                    <BeginStoryboard><Storyboard><ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#332B2930" Duration="0:0:0.2"/></Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                             </Trigger>
                         </ControlTemplate.Triggers>
@@ -126,89 +115,102 @@
             </Setter>
         </Style>
 
-        <!-- accent action button (smooth color + scale) -->
+        <!-- filled Material button + ripple -->
         <Style x:Key="RayPrimary" TargetType="Button">
-            <Setter Property="Foreground" Value="#161819"/>
+            <Setter Property="Foreground" Value="{StaticResource OnAccent}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="9" Padding="14,10" RenderTransformOrigin="0.5,0.5">
-                            <Border.Background><SolidColorBrush x:Name="bg" Color="#FF9A2E"/></Border.Background>
+                        <Border x:Name="b" CornerRadius="20" Padding="16,11" ClipToBounds="True" RenderTransformOrigin="0.5,0.5">
+                            <Border.Background><SolidColorBrush x:Name="bg" Color="#D0BCFF"/></Border.Background>
                             <Border.RenderTransform><ScaleTransform x:Name="s"/></Border.RenderTransform>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Grid>
+                                <Ellipse x:Name="ripple" Width="12" Height="12" Fill="#33381E72" Opacity="0"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform><ScaleTransform x:Name="rs"/></Ellipse.RenderTransform>
+                                </Ellipse>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <EventTrigger RoutedEvent="Button.Click">
+                                <BeginStoryboard><Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="rs" Storyboard.TargetProperty="ScaleX" From="1" To="34" Duration="0:0:0.5"/>
+                                    <DoubleAnimation Storyboard.TargetName="rs" Storyboard.TargetProperty="ScaleY" From="1" To="34" Duration="0:0:0.5"/>
+                                    <DoubleAnimation Storyboard.TargetName="ripple" Storyboard.TargetProperty="Opacity" From="0.55" To="0" Duration="0:0:0.5"/>
+                                </Storyboard></BeginStoryboard>
+                            </EventTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Trigger.EnterActions>
                                     <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#FFB257" Duration="0:0:0.18"/>
-                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.18">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleY" To="1.03" Duration="0:0:0.18">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
+                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#DCC7FF" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.18"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleY" To="1.03" Duration="0:0:0.18"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#FF9A2E" Duration="0:0:0.22"/>
+                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#D0BCFF" Duration="0:0:0.22"/>
                                         <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.22"/>
                                         <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.22"/>
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="b" Property="Opacity" Value="0.4"/>
-                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.4"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
 
-        <!-- neutral action button (smooth color + scale) -->
+        <!-- tonal Material button + ripple -->
         <Style x:Key="RaySecondary" TargetType="Button">
-            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="Foreground" Value="{StaticResource OnTonal}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" CornerRadius="9" Padding="14,10" RenderTransformOrigin="0.5,0.5"
-                                BorderThickness="1" BorderBrush="{StaticResource Stroke}">
-                            <Border.Background><SolidColorBrush x:Name="bg" Color="#222730"/></Border.Background>
+                        <Border x:Name="b" CornerRadius="20" Padding="16,11" ClipToBounds="True" RenderTransformOrigin="0.5,0.5">
+                            <Border.Background><SolidColorBrush x:Name="bg" Color="#4A4458"/></Border.Background>
                             <Border.RenderTransform><ScaleTransform x:Name="s"/></Border.RenderTransform>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Grid>
+                                <Ellipse x:Name="ripple" Width="12" Height="12" Fill="#33E8DEF8" Opacity="0"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform><ScaleTransform x:Name="rs"/></Ellipse.RenderTransform>
+                                </Ellipse>
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Grid>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <EventTrigger RoutedEvent="Button.Click">
+                                <BeginStoryboard><Storyboard>
+                                    <DoubleAnimation Storyboard.TargetName="rs" Storyboard.TargetProperty="ScaleX" From="1" To="34" Duration="0:0:0.5"/>
+                                    <DoubleAnimation Storyboard.TargetName="rs" Storyboard.TargetProperty="ScaleY" From="1" To="34" Duration="0:0:0.5"/>
+                                    <DoubleAnimation Storyboard.TargetName="ripple" Storyboard.TargetProperty="Opacity" From="0.5" To="0" Duration="0:0:0.5"/>
+                                </Storyboard></BeginStoryboard>
+                            </EventTrigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Trigger.EnterActions>
                                     <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#2B313B" Duration="0:0:0.18"/>
-                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.18">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
-                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleY" To="1.03" Duration="0:0:0.18">
-                                            <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                                        </DoubleAnimation>
+                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#564F66" Duration="0:0:0.18"/>
+                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleX" To="1.03" Duration="0:0:0.18"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleY" To="1.03" Duration="0:0:0.18"><DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction></DoubleAnimation>
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard><Storyboard>
-                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#222730" Duration="0:0:0.22"/>
+                                        <ColorAnimation Storyboard.TargetName="bg" Storyboard.TargetProperty="Color" To="#4A4458" Duration="0:0:0.22"/>
                                         <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.22"/>
                                         <DoubleAnimation Storyboard.TargetName="s" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.22"/>
                                     </Storyboard></BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="b" Property="Opacity" Value="0.4"/>
-                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.4"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -229,9 +231,7 @@
                             <ContentPresenter VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Foreground" Value="{StaticResource Text}"/>
-                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Foreground" Value="{StaticResource Accent}"/></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
