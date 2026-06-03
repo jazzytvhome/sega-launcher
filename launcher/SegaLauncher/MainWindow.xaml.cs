@@ -21,6 +21,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        UpdateInstaller.CleanupOldBackup();
         SourceList.ItemsSource = Catalog.Items;
         SourceList.SelectedIndex = 0;
         VersionLabel.Text = "v" + AppConfig.Version;
@@ -52,12 +53,42 @@ public partial class MainWindow : Window
             _downloadUrl = (Uri.TryCreate(info.url, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps)
                 ? u.AbsoluteUri
                 : null;
-            DownloadButton.Visibility = _downloadUrl != null ? Visibility.Visible : Visibility.Collapsed;
-            FadeIn(UpdatePanel);
+            await AutoUpdateAsync();
         }
         else
         {
             FadeIn(MainPanel);
+        }
+    }
+
+    private async Task AutoUpdateAsync()
+    {
+        UpdateTitle.Text = "Updating…";
+        UpdateMsg.Text = "Downloading the new version, please wait.";
+        UpdateProgress.Visibility = Visibility.Visible;
+        UpdateProgress.Value = 0;
+        DownloadButton.Visibility = Visibility.Collapsed;
+        FadeIn(UpdatePanel);
+
+        bool ok = false;
+        if (_downloadUrl != null)
+            ok = await UpdateInstaller.RunAsync(
+                _downloadUrl,
+                p => Dispatcher.Invoke(() => UpdateProgress.Value = p * 100));
+
+        if (ok)
+        {
+            UpdateMsg.Text = "Update ready — restarting…";
+            await Task.Delay(500);
+            Application.Current.Shutdown();
+        }
+        else
+        {
+            // auto-update couldn't run (untrusted url / no write permission) — offer manual
+            UpdateTitle.Text = "Update needed";
+            UpdateMsg.Text = "Couldn't auto-update. Get the new version manually:";
+            UpdateProgress.Visibility = Visibility.Collapsed;
+            DownloadButton.Visibility = _downloadUrl != null ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 

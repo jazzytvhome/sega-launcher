@@ -81,13 +81,15 @@
                         <TextBlock Text="Checking for updates… please wait" Foreground="{StaticResource Muted}" FontSize="14"/>
                     </StackPanel>
 
-                    <!-- update required -->
+                    <!-- auto-update -->
                     <StackPanel x:Name="UpdatePanel" Visibility="Collapsed" VerticalAlignment="Top">
-                        <TextBlock Text="Update needed" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="SemiBold"/>
-                        <TextBlock Text="A newer version is required to continue. Grab the latest SEGA+ Installer, then reopen it."
-                                   Foreground="{StaticResource Text}" FontSize="13" TextWrapping="Wrap" Margin="0,12,0,18"/>
+                        <TextBlock x:Name="UpdateTitle" Text="Updating…" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="UpdateMsg" Text="Downloading the new version, please wait."
+                                   Foreground="{StaticResource Text}" FontSize="13" TextWrapping="Wrap" Margin="0,12,0,16"/>
+                        <ProgressBar x:Name="UpdateProgress" Height="6" Minimum="0" Maximum="100" Value="0"
+                                     Foreground="{StaticResource Accent}" Background="{StaticResource Row}" BorderThickness="0"/>
                         <Button x:Name="DownloadButton" Style="{StaticResource RayPrimary}" Content="Get the latest version"
-                                HorizontalAlignment="Left" Click="Download_Click"/>
+                                HorizontalAlignment="Left" Visibility="Collapsed" Margin="0,16,0,0" Click="Download_Click"/>
                         <Button Style="{StaticResource Ghost}" Content="re-check" Click="Recheck_Click" Margin="0,12,0,0"/>
                     </StackPanel>
 

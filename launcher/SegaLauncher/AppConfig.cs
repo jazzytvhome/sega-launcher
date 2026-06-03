@@ -9,7 +9,7 @@ public static class AppConfig
 
     // Bump this when you ship an update, and set MIN_VERSION in Vercel to match
     // so older launchers show "update needed".
-    public const string Version = "1.0.1";
+    public const string Version = "1.0.2";
 
     public static string RedirectUri => $"http://127.0.0.1:{LoopbackPort}/callback";
 }
