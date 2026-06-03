@@ -1,0 +1,45 @@
+<?xml version='1.0'?>
+<!--
+  Obfuscar config for the SEGA+ Launcher.
+
+  Runs ONLY during `dotnet publish -p:Obfuscate=true` (see SegaLauncher.csproj),
+  against the publish staging dir where every WPF runtime DLL sits next to the
+  managed assembly, so Cecil can resolve all references locally.
+
+  WHAT IT DOES
+    - Renames internal/private + public types, methods, fields.
+    - Encrypts string literals (HideStrings) — hides endpoint URLs, OAuth scopes,
+      the GitHub update path, and integrity constants from a casual `strings` grep.
+
+  WHAT IT DELIBERATELY DOES NOT DO (and why — these would silently break runtime)
+    - RenameProperties=false: every JSON-mapped member (VerifyResponse, VersionInfo,
+      and the anonymous { code, code_verifier } request body) is a *property*.
+      System.Text.Json matches by name, so renaming any of them breaks auth/update.
+    - RenameEvents=false: WPF wires events through compiled BAML by name.
+    - SkipType App / MainWindow: BAML resolves these types, their named elements
+      (fields like SourceList, DownloadButton) and Click handlers by their original
+      string names. Renaming them breaks the UI at load time.
+
+  InPath/OutPath are '.' — the csproj target runs obfuscar with WorkingDirectory set
+  to the publish staging folder.
+-->
+<Obfuscator>
+  <Var name="InPath" value="." />
+  <Var name="OutPath" value=".\_obf" />
+  <Var name="KeepPublicApi" value="false" />
+  <Var name="HidePrivateApi" value="true" />
+  <Var name="HideStrings" value="true" />
+  <Var name="RenameProperties" value="false" />
+  <Var name="RenameEvents" value="false" />
+  <Var name="RenameFields" value="true" />
+  <Var name="ReuseNames" value="true" />
+  <Var name="UseUnicodeNames" value="false" />
+  <Var name="OptimizeMethods" value="true" />
+  <Var name="SuppressIldasm" value="true" />
+
+  <Module file="$(InPath)\SEGA+ Launcher.dll">
+    <!-- WPF: referenced by name from compiled BAML. Leave fully intact. -->
+    <SkipType name="SegaLauncher.App" skipMethods="true" skipFields="true" skipProperties="true" skipEvents="true" skipStringHiding="true" />
+    <SkipType name="SegaLauncher.MainWindow" skipMethods="true" skipFields="true" skipProperties="true" skipEvents="true" skipStringHiding="true" />
+  </Module>
+</Obfuscator>

@@ -5,5 +5,45 @@
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <AssemblyName>SEGA+ Launcher</AssemblyName>
+
+    <!-- Ship no debug symbols in Release: PDBs carry local names + line numbers
+         that make a decompiled build far easier to read. Dev builds keep symbols. -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <DebugSymbols Condition="'$(Configuration)' == 'Release'">false</DebugSymbols>
+
+    <!-- Set by package.ps1 (`-p:Obfuscate=true`). Off by default so `dotnet run`,
+         dev builds, and the test project use the plain, debuggable assembly. -->
+    <Obfuscate Condition="'$(Obfuscate)' == ''">false</Obfuscate>
   </PropertyGroup>
+
+  <!--
+    Obfuscate the managed assembly in the build-output dir ($(OutDir)) just before
+    the single-file bundler packs it. The single-file bundler reads its inputs from
+    $(OutDir) (not $(PublishDir), which only receives the final .exe), and for a
+    self-contained build every WPF runtime DLL is laid out there next to
+    SEGA+ Launcher.dll — so Obfuscar's Cecil resolver finds all references locally.
+    The bundler then packs the obfuscated DLL into the single .exe deliverable.
+  -->
+  <Target Name="ObfuscatePublish"
+          Condition="'$(Obfuscate)' == 'true'"
+          BeforeTargets="GenerateSingleFileBundle">
+    <!-- $(OutDir) is relative; resolve to an absolute path so the config's
+         projectFileDirectory (which InPath="." is relative to) is unambiguous. -->
+    <PropertyGroup>
+      <_ObfDir>$([System.IO.Path]::GetFullPath('$(OutDir)'))</_ObfDir>
+    </PropertyGroup>
+    <Message Importance="high" Text="==> Obfuscating $(_ObfDir)\SEGA+ Launcher.dll (Obfuscar)" />
+    <!-- Obfuscar resolves InPath/OutPath relative to the config file's own
+         directory, so the config must live in $(_ObfDir) alongside the DLL. -->
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\Obfuscar.xml"
+          DestinationFiles="$(_ObfDir)\Obfuscar.xml" />
+    <Exec Command="obfuscar.console &quot;$(_ObfDir)\Obfuscar.xml&quot;"
+          WorkingDirectory="$(_ObfDir)" />
+    <Copy SourceFiles="$(_ObfDir)\_obf\SEGA+ Launcher.dll"
+          DestinationFiles="$(_ObfDir)\SEGA+ Launcher.dll"
+          OverwriteReadOnlyFiles="true" />
+    <RemoveDir Directories="$(_ObfDir)\_obf" />
+    <Delete Files="$(_ObfDir)\Obfuscar.xml" />
+    <Message Importance="high" Text="==> Obfuscation complete." />
+  </Target>
 </Project>

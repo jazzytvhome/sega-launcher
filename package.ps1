@@ -48,6 +48,17 @@ Copy-Item $blob $pubBlob -Force
 Write-Host "==> Staged blob -> vercel-app/public/game.enc" -ForegroundColor Cyan
 
 # --- 3. Publish the launcher exe ------------------------------------------
+# The self-contained build obfuscates the managed assembly via Obfuscar
+# (global tool). Make sure it's installed so the build doesn't fail mid-way.
+if (-not $FrameworkDependent) {
+  $hasObfuscar = Get-Command obfuscar.console -ErrorAction SilentlyContinue
+  if (-not $hasObfuscar) {
+    Write-Host "==> Installing Obfuscar global tool..." -ForegroundColor Cyan
+    dotnet tool install -g Obfuscar.GlobalTool
+    $env:PATH = "$env:PATH;$env:USERPROFILE\.dotnet\tools"
+  }
+}
+
 Write-Host "==> Publishing launcher exe..." -ForegroundColor Cyan
 $pub = Join-Path $launcher "bin\package-publish"
 if (Test-Path $pub) { Remove-Item -Recurse -Force $pub }
@@ -56,7 +67,10 @@ try {
   if ($FrameworkDependent) {
     dotnet publish -c Release -o $pub
   } else {
-    dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $pub
+    # -p:Obfuscate=true runs Obfuscar over the managed assembly before the single-file
+    # bundle (see SegaLauncher.csproj): renames the logic classes + encrypts strings,
+    # while leaving WPF (App/MainWindow) and JSON property names intact.
+    dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Obfuscate=true -o $pub
   }
 } finally { Pop-Location }
 
