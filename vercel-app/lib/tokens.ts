@@ -26,3 +26,31 @@ export async function verifyDownload(token: string): Promise<boolean> {
     return false;
   }
 }
+
+// --- weekly license token (separate secret from the download/game key) ---
+function licenseSecret(): Uint8Array {
+  return new TextEncoder().encode(process.env.LICENSE_SECRET ?? "");
+}
+
+const LICENSE_DAYS = Number(process.env.LICENSE_DAYS ?? "7");
+
+export async function signLicense(uid: string, machine: string): Promise<string> {
+  return await new SignJWT({ scope: "license", mid: machine })
+    .setProtectedHeader({ alg: "HS256" })
+    .setSubject(uid)
+    .setIssuedAt()
+    .setExpirationTime(`${LICENSE_DAYS}d`)
+    .sign(licenseSecret());
+}
+
+export type LicenseCheck = { ok: true; uid: string } | { ok: false };
+
+export async function verifyLicense(token: string, machine: string): Promise<LicenseCheck> {
+  try {
+    const { payload } = await jwtVerify(token, licenseSecret());
+    if (payload.scope !== "license" || payload.mid !== machine || !payload.sub) return { ok: false };
+    return { ok: true, uid: String(payload.sub) };
+  } catch {
+    return { ok: false };
+  }
+}
