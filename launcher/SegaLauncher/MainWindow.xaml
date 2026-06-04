@@ -134,8 +134,11 @@
                                 </TextBlock>
                                 <Button Style="{StaticResource SceneButton.Blue}" Content="✓ VERIFY WITH DISCORD"
                                         HorizontalAlignment="Center" Click="Verify_Click"/>
+                                <TextBlock x:Name="LicenseStatus" Text="" HorizontalAlignment="Center"
+                                           Margin="0,10,0,0" FontSize="15" Foreground="{StaticResource Red}"
+                                           TextWrapping="Wrap" MaxWidth="380"/>
                                 <TextBlock Text="opens your browser // game key is never written to disk"
-                                           HorizontalAlignment="Center" Margin="0,16,0,0"
+                                           HorizontalAlignment="Center" Margin="0,6,0,0"
                                            Foreground="{StaticResource Faint}" FontSize="15"/>
                             </StackPanel>
                         </StackPanel>

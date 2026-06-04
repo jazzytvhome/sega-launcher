@@ -7,7 +7,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using System.Windows.Navigation;
 using Microsoft.Win32;
 
 namespace SegaLauncher;
@@ -165,7 +164,7 @@ public partial class MainWindow : Window
         var result = await DiscordAuth.RunAsync();
         if (result.Outcome != AuthOutcome.Verified || string.IsNullOrEmpty(result.Lic))
         {
-            StatusText.Text = result.Message ?? "Verification failed.";
+            LicenseStatus.Text = result.Message ?? "Verification failed.";
             return;
         }
         License.Save(result.Lic);
@@ -264,7 +263,8 @@ public partial class MainWindow : Window
         try { vault = GameVault.Open(blob, Convert.FromBase64String(key!)); }
         catch { StatusText.Text = "Couldn't decrypt (wrong key or corrupt file)."; SetBusy(false); return; }
 
-        if (mode == Mode.Play) StartPlay(vault); else DoInstall(vault, item);
+        try { if (mode == Mode.Play) StartPlay(vault); else DoInstall(vault, item); }
+        catch { StatusText.Text = "Couldn't start — try again."; }
         SetBusy(false);
     }
 
@@ -359,12 +359,6 @@ public partial class MainWindow : Window
         tt.BeginAnimation(TranslateTransform.YProperty,
             new DoubleAnimation(12, 0, TimeSpan.FromMilliseconds(260))
             { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
-    }
-
-    private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
-    {
-        Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
-        e.Handled = true;
     }
 
     protected override void OnClosed(EventArgs e)
