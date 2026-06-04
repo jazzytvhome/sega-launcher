@@ -1,10 +1,10 @@
 <Window x:Class="SegaLauncher.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="SEGA+" Width="660" Height="470"
+        Title="SEGA+" Width="900" Height="600"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
-        FontFamily="Segoe UI" Loaded="Window_Loaded" Opacity="0">
+        FontFamily="{StaticResource Term}" Loaded="Window_Loaded" Opacity="0">
     <Window.Triggers>
         <EventTrigger RoutedEvent="Window.Loaded">
             <BeginStoryboard>
@@ -15,115 +15,355 @@
         </EventTrigger>
     </Window.Triggers>
 
-    <Border Margin="16" CornerRadius="14" Background="{StaticResource Win}">
+    <!-- outer frame: 2px edge + hard flat offset shadow (no blur, no bloom) -->
+    <Border Margin="14" Background="{StaticResource Bg}" BorderBrush="{StaticResource Edge}" BorderThickness="2">
         <Border.Effect>
-            <DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.5" Color="#000000"/>
+            <DropShadowEffect Color="#FF000000" Direction="-45" ShadowDepth="5" BlurRadius="0" Opacity="1"/>
         </Border.Effect>
 
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="172"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
+        <Grid ClipToBounds="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="34"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <!-- sidebar -->
-            <Border Grid.Column="0" CornerRadius="14,0,0,14" Background="{StaticResource Side}">
-                <DockPanel Margin="14,16,14,14">
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="6,0,0,16">
-                        <Ellipse Width="9" Height="9" Fill="{StaticResource Accent}" VerticalAlignment="Center"/>
-                        <TextBlock Text="SEGA+" Margin="9,0,0,0" Foreground="{StaticResource Text}"
-                                   FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+            <!-- ===================== TITLE BAR ===================== -->
+            <Border Grid.Row="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource Edge}"
+                    BorderThickness="0,0,0,2" MouseLeftButtonDown="TitleBar_MouseDown">
+                <Grid>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock FontFamily="{StaticResource Display}" FontSize="15" VerticalAlignment="Center">
+                            <Run Text="SEGA" Foreground="{StaticResource Ink}"/><Run Text="+" Foreground="{StaticResource Blue}"/>
+                        </TextBlock>
+                        <TextBlock Text="// SECURE LOADER" Margin="10,0,0,0" VerticalAlignment="Center"
+                                   FontSize="16" Foreground="{StaticResource Dim}"/>
                     </StackPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="LIBRARY" Foreground="{StaticResource Muted}"
-                               FontSize="10" FontWeight="SemiBold" Margin="8,2,0,6"/>
-                    <TextBlock x:Name="VersionLabel" DockPanel.Dock="Bottom" Foreground="{StaticResource Muted}"
-                               FontSize="11" Margin="8,8,0,0"/>
-                    <ListBox x:Name="SourceList" Background="Transparent" BorderThickness="0"
-                             ItemContainerStyle="{StaticResource SourceTab}" DisplayMemberPath="Name"
-                             SelectionChanged="SourceList_SelectionChanged"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
-                </DockPanel>
-            </Border>
-
-            <!-- main -->
-            <Grid Grid.Column="1">
-                <!-- draggable title bar + window buttons -->
-                <Grid VerticalAlignment="Top" Height="42" Background="Transparent" MouseLeftButtonDown="TitleBar_MouseDown">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,12,0">
-                        <Button Style="{StaticResource Chrome}" Content="&#8211;" Click="Min_Click"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0">
+                        <Button Style="{StaticResource Chrome}" Content="_" Click="Min_Click"/>
                         <Button Style="{StaticResource ChromeClose}" Content="&#10005;" Click="Close_Click"/>
                     </StackPanel>
                 </Grid>
+            </Border>
 
-                <!-- content -->
-                <Grid Margin="26,50,26,40">
-                    <!-- update check -->
-                    <StackPanel x:Name="CheckPanel" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <Grid Width="38" Height="38" HorizontalAlignment="Center" Margin="0,0,0,14">
-                            <Ellipse Stroke="#3A3F41" StrokeThickness="3"/>
-                            <Ellipse Stroke="{StaticResource Accent}" StrokeThickness="3"
-                                     StrokeDashArray="4 100" StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5">
-                                <Ellipse.RenderTransform>
-                                    <RotateTransform x:Name="SpinnerRot"/>
-                                </Ellipse.RenderTransform>
-                                <Ellipse.Triggers>
-                                    <EventTrigger RoutedEvent="Ellipse.Loaded">
+            <!-- ===================== STAGE (panels toggled by Visibility) ===================== -->
+            <Grid Grid.Row="1">
+
+                <!-- update check spinner -->
+                <StackPanel x:Name="CheckPanel" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Grid Width="38" Height="38" HorizontalAlignment="Center" Margin="0,0,0,14">
+                        <Ellipse Stroke="{StaticResource Faint}" StrokeThickness="3"/>
+                        <Ellipse Stroke="{StaticResource Blue}" StrokeThickness="3"
+                                 StrokeDashArray="4 100" StrokeDashCap="Round" RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.RenderTransform>
+                                <RotateTransform x:Name="SpinnerRot"/>
+                            </Ellipse.RenderTransform>
+                            <Ellipse.Triggers>
+                                <EventTrigger RoutedEvent="Ellipse.Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever">
+                                            <DoubleAnimation Storyboard.TargetName="SpinnerRot" Storyboard.TargetProperty="Angle"
+                                                             From="0" To="360" Duration="0:0:0.9"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Ellipse.Triggers>
+                        </Ellipse>
+                    </Grid>
+                    <TextBlock Text="checking for updates… please wait" Foreground="{StaticResource Dim}" FontSize="17"/>
+                </StackPanel>
+
+                <!-- auto-update -->
+                <StackPanel x:Name="UpdatePanel" Visibility="Collapsed" VerticalAlignment="Center"
+                            HorizontalAlignment="Center" MaxWidth="460">
+                    <TextBlock x:Name="UpdateTitle" Text="UPDATING…" Foreground="{StaticResource Amber}"
+                               FontFamily="{StaticResource Display}" FontSize="28"/>
+                    <TextBlock x:Name="UpdateMsg" Text="Downloading the new version, please wait."
+                               Foreground="{StaticResource Ink}" FontSize="17" TextWrapping="Wrap" Margin="0,12,0,16"/>
+                    <ProgressBar x:Name="UpdateProgress" Height="8" Minimum="0" Maximum="100" Value="0"
+                                 Foreground="{StaticResource Blue}" Background="{StaticResource Panel2}" BorderThickness="0"/>
+                    <Button x:Name="DownloadButton" Style="{StaticResource SceneButton.Blue}" Content="GET THE LATEST VERSION"
+                            HorizontalAlignment="Left" Visibility="Collapsed" Margin="0,18,0,0" Click="Download_Click"/>
+                    <Button Style="{StaticResource SceneButton.Ghost}" Content="RE-CHECK" Click="Recheck_Click"
+                            HorizontalAlignment="Left" Margin="0,12,0,0" FontSize="14" Padding="14,7"/>
+                </StackPanel>
+
+                <!-- ===================== BOOT / TAMPER ===================== -->
+                <Border x:Name="BootPanel" Visibility="Collapsed" Background="#FF06070E" Padding="38,28">
+                    <StackPanel>
+                        <TextBlock x:Name="BootHead" Text="CHECKING FOR TAMPERING"
+                                   FontFamily="{StaticResource Display}" FontSize="29" Foreground="{StaticResource Ink}"/>
+                        <TextBlock x:Name="BootSub" Text="do not close this window" Margin="0,2,0,16"
+                                   FontSize="17" Foreground="{StaticResource Dim}"/>
+                        <TextBlock x:Name="BootLog" Text="" FontFamily="{StaticResource Term}" FontSize="18"
+                                   Foreground="#FFB8C2D8" LineHeight="22" TextWrapping="Wrap"/>
+                        <TextBlock x:Name="BootMeter" Text="" Margin="0,14,0,0" FontFamily="{StaticResource Term}"
+                                   FontSize="20" Foreground="{StaticResource Blue}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- ===================== VERIFY GATE (NFO box) ===================== -->
+                <Grid x:Name="LicensePanel" Visibility="Collapsed">
+                    <Border Width="520" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Background="{StaticResource Panel}" BorderBrush="{StaticResource Edge}" BorderThickness="2">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#FF000000" Direction="-45" ShadowDepth="5" BlurRadius="0" Opacity="1"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <!-- nfo top bar -->
+                            <Border BorderBrush="{StaticResource Edge}" BorderThickness="0,0,0,2" Padding="14,6">
+                                <Grid>
+                                    <TextBlock Text="SEGA+ // ACCESS" Foreground="{StaticResource Dim}" FontSize="16"/>
+                                    <TextBlock Text="members.only" HorizontalAlignment="Right"
+                                               Foreground="{StaticResource Dim}" FontSize="16"/>
+                                </Grid>
+                            </Border>
+                            <!-- nfo body -->
+                            <StackPanel Margin="30,26,30,30" HorizontalAlignment="Center">
+                                <Border BorderBrush="{StaticResource Red}" BorderThickness="2" Padding="12,4"
+                                        HorizontalAlignment="Center" Margin="0,0,0,18" RenderTransformOrigin="0.5,0.5">
+                                    <Border.RenderTransform><RotateTransform Angle="-3"/></Border.RenderTransform>
+                                    <TextBlock Text="MEMBERS ONLY" Foreground="{StaticResource Red}"
+                                               FontFamily="{StaticResource Display}" FontSize="14"/>
+                                </Border>
+                                <TextBlock Text="VERIFY TO ENTER" HorizontalAlignment="Center"
+                                           FontFamily="{StaticResource Display}" FontSize="34" Foreground="{StaticResource Ink}"/>
+                                <TextBlock TextWrapping="Wrap" TextAlignment="Center" MaxWidth="380" Margin="0,6,0,22"
+                                           FontSize="18" Foreground="{StaticResource Dim}">
+                                    Sign in with Discord to prove SEGA+ membership. Pass once and you hold a
+                                    <Run Text="7-DAY LICENSE" Foreground="{StaticResource Amber}"/> — no re-verify until it runs out.
+                                </TextBlock>
+                                <Button Style="{StaticResource SceneButton.Blue}" Content="✓ VERIFY WITH DISCORD"
+                                        HorizontalAlignment="Center" Click="Verify_Click"/>
+                                <TextBlock Text="opens your browser // game key is never written to disk"
+                                           HorizontalAlignment="Center" Margin="0,16,0,0"
+                                           Foreground="{StaticResource Faint}" FontSize="15"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- ===================== MAIN ===================== -->
+                <Grid x:Name="MainPanel" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="30"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="228"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- left rail: releases -->
+                        <Border Grid.Column="0" Background="{StaticResource Panel}" BorderBrush="{StaticResource Edge}"
+                                BorderThickness="0,0,2,0">
+                            <DockPanel Margin="10,12,10,12">
+                                <TextBlock DockPanel.Dock="Top" Text="RELEASES" Margin="8,4,0,10"
+                                           FontFamily="{StaticResource Display}" FontSize="13"
+                                           Foreground="{StaticResource Dim}"/>
+                                <!-- who footer -->
+                                <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource Edge}" BorderThickness="0,2,0,0"
+                                        Margin="0,8,0,0" Padding="8,8,8,2">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="26" Height="26" Fill="{StaticResource Blue}"/>
+                                        <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="justoneontop" Foreground="{StaticResource Ink}" FontSize="17"/>
+                                            <TextBlock Text="▦ SEGA+ verified" Foreground="{StaticResource Green}" FontSize="14"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                                <!-- request button sits above the who footer -->
+                                <Button DockPanel.Dock="Bottom" Style="{StaticResource ReqButton}"
+                                        Content="+ REQUEST A SOURCE" Click="Request_Click"/>
+                                <ListBox x:Name="SourceList" Background="Transparent" BorderThickness="0"
+                                         ItemContainerStyle="{StaticResource ReleaseTab}" DisplayMemberPath="Name"
+                                         SelectionChanged="SourceList_SelectionChanged"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                            </DockPanel>
+                        </Border>
+
+                        <!-- content -->
+                        <Grid Grid.Column="1" Margin="22,18,22,12">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- hero card -->
+                            <Border Grid.Row="0" BorderBrush="{StaticResource Edge}" BorderThickness="2" Background="#FF0C1230"
+                                    ClipToBounds="True">
+                                <Grid Height="186">
+                                    <!-- flat diagonal art backdrop -->
+                                    <Rectangle Fill="#FF11204F"/>
+                                    <!-- amber diamond sun -->
+                                    <Path Fill="{StaticResource Amber}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                          Margin="0,28,40,0" Data="M37,0 L74,37 L37,74 L0,37 Z"/>
+                                    <!-- ribbon -->
+                                    <Border Background="{StaticResource Red}" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                            Margin="0,14,0,0" Padding="12,4,14,4">
+                                        <TextBlock Text="SEGA+ EXCLUSIVE" Foreground="#FF0A0A0A"
+                                                   FontFamily="{StaticResource Display}" FontSize="13"/>
+                                    </Border>
+                                    <!-- license badge -->
+                                    <Border BorderBrush="{StaticResource Green}" BorderThickness="2" Padding="9,3"
+                                            HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,12,0">
+                                        <TextBlock x:Name="LicenseBadge" Text="▦ LICENSE · 7D LEFT"
+                                                   Foreground="{StaticResource Green}" FontSize="15"/>
+                                    </Border>
+                                    <!-- title -->
+                                    <StackPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="16,0,0,12">
+                                        <TextBlock x:Name="SourceName" Text="MODDED SLOWROADS"
+                                                   FontFamily="{StaticResource Display}" FontSize="34"
+                                                   Foreground="{StaticResource Ink}"/>
+                                        <TextBlock Text="orig. ANSLO · modded for SEGA+" Foreground="{StaticResource Dim}" FontSize="15"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- meta + actions -->
+                            <Border Grid.Row="1" BorderBrush="{StaticResource Edge}" BorderThickness="2,0,2,2" Padding="16,14">
+                                <StackPanel>
+                                    <TextBlock x:Name="DescText" TextWrapping="Wrap" FontSize="17" Foreground="#FFAEB4CF"
+                                               Text="Endless procedural roads, tuned rides, members-only tweaks. Decrypted in memory and served locally — nothing copyrighted touches your disk on PLAY."/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                                        <Button x:Name="PlayButton" Style="{StaticResource SceneButton.Red}"
+                                                Content="▶ PLAY" Click="Play_Click"/>
+                                        <Button x:Name="InstallButton" Style="{StaticResource SceneButton.Ghost}"
+                                                Content="⬇ INSTALL" Margin="12,0,0,0" Click="Install_Click"/>
+                                    </StackPanel>
+                                    <!-- status -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,16,0,0" VerticalAlignment="Bottom">
+                                        <Rectangle Width="9" Height="9" Fill="{StaticResource Green}" VerticalAlignment="Top" Margin="0,4,0,0"/>
+                                        <TextBlock x:Name="StatusText" Margin="9,0,0,0" FontSize="16" TextWrapping="Wrap"
+                                                   MaxWidth="420" Foreground="{StaticResource Dim}"
+                                                   Text="verified // license valid 7 days"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Grid>
+
+                    <!-- footer marquee -->
+                    <Border Grid.Row="1" Background="{StaticResource Panel}" BorderBrush="{StaticResource Edge}"
+                            BorderThickness="0,2,0,0" ClipToBounds="True">
+                        <Canvas>
+                            <TextBlock x:Name="Marquee" Canvas.Top="5" FontSize="17" Foreground="{StaticResource Blue}">
+                                <Run Text="★ SKIDDED BY JUSTONEONTOP"/>
+                                <Run Text="   //   " Foreground="{StaticResource Faint}"/>
+                                <Run Text="SEGA+ ON TOP" Foreground="{StaticResource Amber}"/>
+                                <Run Text="   //   " Foreground="{StaticResource Faint}"/>
+                                <Run Text="GREETZ TO THE CREW"/>
+                                <Run Text="   //   " Foreground="{StaticResource Faint}"/>
+                                <Run Text="NO TAMPERING DETECTED"/>
+                                <Run Text="   //   " Foreground="{StaticResource Faint}"/>
+                                <Run Text="ENJOY THE RIDE"/>
+                                <Run Text="   //   " Foreground="{StaticResource Faint}"/>
+                                <TextBlock.RenderTransform>
+                                    <TranslateTransform x:Name="MarqueeX" X="900"/>
+                                </TextBlock.RenderTransform>
+                                <TextBlock.Triggers>
+                                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
                                         <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever">
-                                                <DoubleAnimation Storyboard.TargetName="SpinnerRot" Storyboard.TargetProperty="Angle"
-                                                                 From="0" To="360" Duration="0:0:0.9"/>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="MarqueeX"
+                                                                 Storyboard.TargetProperty="X"
+                                                                 From="900" To="-900" Duration="0:0:16"
+                                                                 RepeatBehavior="Forever"/>
                                             </Storyboard>
                                         </BeginStoryboard>
                                     </EventTrigger>
-                                </Ellipse.Triggers>
-                            </Ellipse>
-                        </Grid>
-                        <TextBlock Text="Checking for updates… please wait" Foreground="{StaticResource Muted}" FontSize="14"/>
-                    </StackPanel>
+                                </TextBlock.Triggers>
+                            </TextBlock>
+                        </Canvas>
+                    </Border>
 
-                    <!-- auto-update -->
-                    <StackPanel x:Name="UpdatePanel" Visibility="Collapsed" VerticalAlignment="Top">
-                        <TextBlock x:Name="UpdateTitle" Text="Updating…" Foreground="{StaticResource Accent}" FontSize="20" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="UpdateMsg" Text="Downloading the new version, please wait."
-                                   Foreground="{StaticResource Text}" FontSize="13" TextWrapping="Wrap" Margin="0,12,0,16"/>
-                        <ProgressBar x:Name="UpdateProgress" Height="6" Minimum="0" Maximum="100" Value="0"
-                                     Foreground="{StaticResource Accent}" Background="{StaticResource Row}" BorderThickness="0"/>
-                        <Button x:Name="DownloadButton" Style="{StaticResource RayPrimary}" Content="Get the latest version"
-                                HorizontalAlignment="Left" Visibility="Collapsed" Margin="0,16,0,0" Click="Download_Click"/>
-                        <Button Style="{StaticResource Ghost}" Content="re-check" Click="Recheck_Click" Margin="0,12,0,0"/>
-                    </StackPanel>
-
-                    <!-- main flow -->
-                    <StackPanel x:Name="MainPanel" Visibility="Collapsed" VerticalAlignment="Top">
-                        <TextBlock x:Name="SourceName" Foreground="{StaticResource Text}" FontSize="20" FontWeight="SemiBold"/>
-                        <TextBlock x:Name="DescText" Foreground="{StaticResource Muted}" FontSize="12.5" TextWrapping="Wrap" Margin="0,6,0,0"/>
-
-                        <Grid Margin="0,24,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="12"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <Button x:Name="PlayButton" Grid.Column="0" Style="{StaticResource RayPrimary}"
-                                    Content="&#9654;  Play" Click="Play_Click"/>
-                            <Button x:Name="InstallButton" Grid.Column="2" Style="{StaticResource RaySecondary}"
-                                    Content="&#11015;  Install source" Click="Install_Click"/>
-                        </Grid>
-
-                        <TextBlock x:Name="StatusText" Foreground="{StaticResource Text}" FontSize="13"
-                                   TextWrapping="Wrap" Margin="0,20,0,0" MinHeight="44"/>
-                    </StackPanel>
+                    <!-- version label (bottom-left of footer, overlaid) -->
+                    <TextBlock x:Name="VersionLabel" Grid.Row="1" Text="v1.0.3" HorizontalAlignment="Right"
+                               VerticalAlignment="Center" Margin="0,0,12,0" Foreground="{StaticResource Faint}"
+                               FontSize="15" Background="{StaticResource Panel}" Padding="6,0,0,0"/>
                 </Grid>
 
-                <!-- footer -->
-                <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,18,12">
-                    <TextBlock Text="credit: slowroads.io  " Foreground="{StaticResource Muted}" FontSize="11"/>
-                    <TextBlock>
-                        <Hyperlink NavigateUri="https://www.virustotal.com/"
-                                   RequestNavigate="Hyperlink_RequestNavigate"
-                                   Foreground="{StaticResource Muted}">scan</Hyperlink>
-                    </TextBlock>
-                </StackPanel>
+                <!-- ===================== REQUEST MODAL (full-stage overlay) ===================== -->
+                <Grid x:Name="RequestModal" Visibility="Collapsed" Background="#B304040A">
+                    <Border Width="480" HorizontalAlignment="Center" VerticalAlignment="Center"
+                            Background="{StaticResource Panel}" BorderBrush="{StaticResource Edge}" BorderThickness="2">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#FF000000" Direction="-45" ShadowDepth="5" BlurRadius="0" Opacity="1"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <!-- modal top -->
+                            <Border BorderBrush="{StaticResource Edge}" BorderThickness="0,0,0,2" Padding="12,8">
+                                <Grid>
+                                    <TextBlock Text="REQUEST A SOURCE" Foreground="{StaticResource Amber}"
+                                               FontFamily="{StaticResource Display}" FontSize="20"/>
+                                    <Button HorizontalAlignment="Right" Style="{StaticResource ChromeClose}"
+                                            Content="&#10005;" Click="ReqClose_Click"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- form -->
+                            <StackPanel x:Name="ReqForm" Margin="20,18,20,22">
+                                <TextBlock Text="SOURCE / GAME NAME" Foreground="{StaticResource Dim}" FontSize="16" Margin="0,0,0,6"/>
+                                <TextBox x:Name="ReqName" Style="{StaticResource SceneInput}" MaxLength="80" Margin="0,0,0,14"/>
+
+                                <TextBlock Text="UPLOAD THE BUILD (.ZIP)" Foreground="{StaticResource Dim}" FontSize="16" Margin="0,0,0,6"/>
+                                <Button Click="ReqPick_Click" HorizontalAlignment="Stretch" Cursor="Hand" Margin="0,0,0,14"
+                                        Foreground="{StaticResource Amber}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="d" Background="#FF06070E" BorderBrush="{StaticResource Edge}"
+                                                    BorderThickness="2" Padding="14,18">
+                                                <ContentPresenter HorizontalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="d" Property="BorderBrush" Value="{StaticResource Blue}"/>
+                                                    <Setter TargetName="d" Property="Background" Value="#12365BFF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="⬇ DROP / PICK A .ZIP" HorizontalAlignment="Center"
+                                                   FontFamily="{StaticResource Display}" FontSize="20"
+                                                   Foreground="{StaticResource Amber}"/>
+                                        <TextBlock x:Name="ReqFileLabel" Text="no file chosen" HorizontalAlignment="Center"
+                                                   Margin="0,4,0,0" FontSize="16" Foreground="{StaticResource Dim}"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <TextBlock Text="DETAILS (optional)" Foreground="{StaticResource Dim}" FontSize="16" Margin="0,0,0,6"/>
+                                <TextBox x:Name="ReqNotes" Style="{StaticResource SceneInput}" Height="56"
+                                         AcceptsReturn="True" TextWrapping="Wrap"
+                                         VerticalScrollBarVisibility="Auto" Margin="0,0,0,14"/>
+
+                                <TextBlock TextWrapping="Wrap" FontSize="14" Foreground="{StaticResource Faint}" Margin="0,0,0,16">
+                                    Submitted as <Run Text="justoneontop" Foreground="{StaticResource Blue}"/>. Your .zip uploads
+                                    straight to a private SEGA+ GitHub repo; staff get the link in their queue.
+                                </TextBlock>
+
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Style="{StaticResource SceneButton.Ghost}" Content="CANCEL"
+                                            Click="ReqClose_Click" FontSize="14" Padding="16,8"/>
+                                    <Button x:Name="ReqSendButton" Style="{StaticResource SceneButton.Blue}" Content="SEND REQUEST"
+                                            Click="ReqSend_Click" Margin="10,0,0,0" FontSize="14" Padding="16,8"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- sent confirmation -->
+                            <StackPanel x:Name="ReqSentPanel" Visibility="Collapsed" Margin="20,30,20,30" HorizontalAlignment="Center">
+                                <TextBlock Text="✓ REQUEST SENT" HorizontalAlignment="Center"
+                                           FontFamily="{StaticResource Display}" FontSize="26" Foreground="{StaticResource Green}"/>
+                                <TextBlock Text="staff will review it in the SEGA+ server." HorizontalAlignment="Center"
+                                           Margin="0,8,0,16" FontSize="17" Foreground="{StaticResource Dim}"/>
+                                <Button Style="{StaticResource SceneButton.Ghost}" Content="CLOSE"
+                                        HorizontalAlignment="Center" Click="ReqClose_Click" FontSize="14" Padding="16,8"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
             </Grid>
         </Grid>
     </Border>
