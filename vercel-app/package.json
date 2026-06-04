@@ -11,6 +11,7 @@
     "make:vector": "node scripts/make-test-vector.mjs"
   },
   "dependencies": {
+    "aws4fetch": "^1.0.20",
     "jose": "^5.9.6"
   },
   "devDependencies": {
