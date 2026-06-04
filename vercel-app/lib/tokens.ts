@@ -29,7 +29,9 @@ export async function verifyDownload(token: string): Promise<boolean> {
 
 // --- weekly license token (separate secret from the download/game key) ---
 function licenseSecret(): Uint8Array {
-  return new TextEncoder().encode(process.env.LICENSE_SECRET ?? "");
+  const s = process.env.LICENSE_SECRET;
+  if (!s) throw new Error("LICENSE_SECRET not set");
+  return new TextEncoder().encode(s);
 }
 
 const LICENSE_DAYS = Number(process.env.LICENSE_DAYS ?? "7");

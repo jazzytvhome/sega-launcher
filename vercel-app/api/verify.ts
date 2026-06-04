@@ -33,6 +33,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // key decrypts game.enc; dl is a 2-min token that authorizes downloading it.
   const dl = await signDownload(result.user.id);
-  const lic = await signLicense(result.user.id, String(machine));
+  let lic: string;
+  try {
+    lic = await signLicense(result.user.id, String(machine));
+  } catch {
+    return res.status(500).json({ ok: false, reason: "server_misconfig" });
+  }
   return res.status(200).json({ ok: true, key, dl, lic });
 }

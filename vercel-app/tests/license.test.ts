@@ -18,4 +18,12 @@ describe("license token", () => {
   it("rejects garbage", async () => {
     expect(await verifyLicense("not.a.jwt", "machineABC")).toEqual({ ok: false });
   });
+
+  it("rejects a token signed with a different secret", async () => {
+    process.env.LICENSE_SECRET = "secret-AAAA-secret-AAAA-secret-12";
+    const tok = await signLicense("user123", "machineABC");
+    process.env.LICENSE_SECRET = "secret-BBBB-secret-BBBB-secret-34";
+    expect(await verifyLicense(tok, "machineABC")).toEqual({ ok: false });
+    process.env.LICENSE_SECRET = "test-secret-test-secret-test-1234"; // restore for other tests
+  });
 });

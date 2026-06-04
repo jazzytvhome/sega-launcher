@@ -11,6 +11,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { lic, machine } = req.body ?? {};
   if (!lic || !machine) return res.status(400).json({ ok: false, reason: "bad_request" });
 
+  if (!process.env.LICENSE_SECRET) return res.status(500).json({ ok: false, reason: "server_misconfig" });
+
   const check = await verifyLicense(String(lic), String(machine));
   if (!check.ok) return res.status(401).json({ ok: false, reason: "expired" });
 
