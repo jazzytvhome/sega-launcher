@@ -8,8 +8,15 @@ function client(): AwsClient {
     region: "auto",
   });
 }
+// Defense-in-depth: every keyed operation goes through this. Object keys are server-built as
+// `requests/<uid>/<ts>-<sanitized>`; reject anything else (path traversal, empty segments, etc.)
+// so a key can never be coerced outside that shape even if a future caller forgets to validate.
+function assertSafeKey(key: string): void {
+  if (key.includes("..") || key.includes("//") || !/^requests\/\d+\/\d+-[A-Za-z0-9._-]+$/.test(key))
+    throw new Error("unsafe object key");
+}
 function objectUrl(key: string): string {
-  // key path segments are safe (we build them), so no encoding needed beyond what we already constrain
+  assertSafeKey(key);
   return `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET}/${key}`;
 }
 

@@ -9,7 +9,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const check = await verifyLicense(String(lic), String(machine));
   if (!check.ok) return res.status(401).json({ ok: false, reason: "expired" });
-  if (!String(key).startsWith(`requests/${check.uid}/`))
+  // The key is client-supplied here, so a prefix check alone is not enough: validate the FULL
+  // shape, bound to the authenticated uid, so a crafted key (path traversal / extra segments)
+  // can't reference another user's object. uid is a numeric Discord snowflake from the signed JWT.
+  const keyRe = new RegExp(`^requests/${check.uid}/\\d+-[A-Za-z0-9._-]+$`);
+  if (!keyRe.test(String(key)))
     return res.status(403).json({ ok: false, reason: "not_owner" });
 
   const obj = await objectExists(String(key));
