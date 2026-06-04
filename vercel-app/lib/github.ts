@@ -26,10 +26,22 @@ export async function scopedToken(repo: string): Promise<string> {
 export async function ghJson(token: string, path: string, init?: RequestInit) {
   const res = await fetch(`${GH}${path}`, {
     ...init,
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", ...(init?.headers ?? {}) },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/vnd.github+json",
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
   });
   if (!res.ok) throw new Error(`gh ${path} ${res.status}`);
   return res.json();
+}
+
+export async function getRelease(token: string, repo: string, id: number) {
+  return (await ghJson(token, `/repos/${repo}/releases/${id}`)) as {
+    tag_name: string;
+    assets: Array<{ browser_download_url: string }>;
+  };
 }
 
 // Most recent release tagged req-<uid>-* (used for rate-limiting + idempotency).
