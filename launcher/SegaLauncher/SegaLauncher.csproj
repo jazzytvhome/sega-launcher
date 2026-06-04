@@ -16,6 +16,14 @@
     <Obfuscate Condition="'$(Obfuscate)' == ''">false</Obfuscate>
   </PropertyGroup>
 
+  <!-- Bundled scene assets: fonts + boot mp3 are packed as WPF Resources so they
+       survive the single-file self-contained publish (no loose files on disk). -->
+  <ItemGroup>
+    <Resource Include="Assets\Anton.ttf" />
+    <Resource Include="Assets\VT323.ttf" />
+    <Resource Include="Assets\sega-on-top.mp3" />
+  </ItemGroup>
+
   <!--
     Obfuscate the managed assembly in the build-output dir ($(OutDir)) just before
     the single-file bundler packs it. The single-file bundler reads its inputs from
