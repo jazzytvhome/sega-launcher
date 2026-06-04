@@ -11,7 +11,7 @@ namespace SegaLauncher;
 
 public enum AuthOutcome { Verified, NotMember, Blacklisted, Cancelled, ServerError, PortBusy }
 
-public sealed record AuthResult(AuthOutcome Outcome, string? Key = null, string? Dl = null, string? Message = null);
+public sealed record AuthResult(AuthOutcome Outcome, string? Key = null, string? Dl = null, string? Lic = null, string? Message = null);
 
 public static class DiscordAuth
 {
@@ -60,7 +60,7 @@ public static class DiscordAuth
         {
             var resp = await Http.PostAsJsonAsync(
                 $"{AppConfig.VercelBaseUrl}/api/verify",
-                new { code, code_verifier = pkce.Verifier }, ct);
+                new { code, code_verifier = pkce.Verifier, machine = License.MachineId() }, ct);
 
             if (resp.StatusCode == HttpStatusCode.Forbidden)
             {
@@ -79,7 +79,7 @@ public static class DiscordAuth
             if (body is null || !body.ok || string.IsNullOrEmpty(body.key) || string.IsNullOrEmpty(body.dl))
                 return new AuthResult(AuthOutcome.ServerError, Message: "Unexpected server response.");
 
-            return new AuthResult(AuthOutcome.Verified, body.key, body.dl);
+            return new AuthResult(AuthOutcome.Verified, body.key, body.dl, body.lic);
         }
         catch (HttpRequestException)
         {
@@ -100,5 +100,5 @@ public static class DiscordAuth
         res.OutputStream.Close();
     }
 
-    private sealed record VerifyResponse(bool ok, string? key, string? dl, string? reason);
+    private sealed record VerifyResponse(bool ok, string? key, string? dl, string? lic, string? reason);
 }
