@@ -23,7 +23,7 @@ public static class RequestClient
         var machine = License.MachineId();
         try
         {
-            // 1) init
+            // 1) init — returns presigned PUT URL and object key (no token)
             var initResp = await Http.PostAsJsonAsync($"{AppConfig.VercelBaseUrl}/api/request/init",
                 new { lic, machine, filename = fi.Name, size = fi.Length });
             if ((int)initResp.StatusCode == 429) return new ReqResult(false, "Slow down — 1 request per 5 min.");
@@ -31,25 +31,24 @@ public static class RequestClient
             var init = await initResp.Content.ReadFromJsonAsync<InitResp>();
             if (init is null || !init.ok) return new ReqResult(false, "Couldn't start the request.");
 
-            // 2) PUT the zip straight to GitHub with the scoped token
+            // 2) PUT the zip directly to R2 using the presigned URL.
+            //    Auth is embedded in the query string — no Authorization header needed.
             using (var content = new StreamContent(File.OpenRead(zipPath)))
             {
                 content.Headers.ContentType = new("application/zip");
-                using var put = new HttpRequestMessage(HttpMethod.Post, init.uploadUrl) { Content = content };
-                put.Headers.Add("Authorization", $"Bearer {init.token}");
-                put.Headers.Add("Accept", "application/vnd.github+json");
+                using var put = new HttpRequestMessage(HttpMethod.Put, init.uploadUrl) { Content = content };
                 var putResp = await Http.SendAsync(put);
                 if (!putResp.IsSuccessStatusCode) return new ReqResult(false, "Upload failed.");
             }
 
-            // 3) finalize
+            // 3) finalize — pass the object key so the server can verify ownership
             var finResp = await Http.PostAsJsonAsync($"{AppConfig.VercelBaseUrl}/api/request/finalize",
-                new { lic, machine, releaseId = init.releaseId, source, notes });
+                new { lic, machine, key = init.key, source, notes });
             if (!finResp.IsSuccessStatusCode) return new ReqResult(false, "Couldn't finalize the request.");
             return new ReqResult(true);
         }
         catch (HttpRequestException) { return new ReqResult(false, "Network error — try again."); }
     }
 
-    private sealed record InitResp(bool ok, string uploadUrl, string token, long releaseId, string assetName);
+    private sealed record InitResp(bool ok, string uploadUrl, string key);
 }
