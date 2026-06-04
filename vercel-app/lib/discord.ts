@@ -53,3 +53,15 @@ export async function verifyMembership(
 
   return { ok: true, user: { id: me.id, name: me.username } };
 }
+
+// Re-check membership/blacklist by user id (used by /api/unlock — no OAuth, no browser).
+export async function checkMember(uid: string, env: DiscordEnv): Promise<VerifyResult> {
+  if (env.blacklist?.includes(uid)) return { ok: false, reason: "blacklisted" };
+  const memberRes = await fetch(`${API}/guilds/${env.guildId}/members/${uid}`, {
+    headers: { Authorization: `Bot ${env.botToken}` },
+  });
+  if (memberRes.status === 404) return { ok: false, reason: "not_member" };
+  if (!memberRes.ok) return { ok: false, reason: "discord_error" };
+  const m = (await memberRes.json()) as { user?: { username?: string } };
+  return { ok: true, user: { id: uid, name: m.user?.username ?? "member" } };
+}
