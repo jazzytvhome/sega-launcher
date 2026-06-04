@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEGA+ LOADER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0b11;          /* near-black */
+    --panel:#0f111c;
+    --panel-2:#141728;
+    --ink:#ece6d6;         /* cream, not white */
+    --dim:#6b6f8c;
+    --faint:#3a3e57;
+    --blue:#3a5bff;        /* sega electric blue */
+    --red:#ff3146;         /* hot alert red */
+    --amber:#ffc23a;
+    --green:#57f5a3;       /* terminal ok */
+    --edge:#23273f;
+    --shadow:5px 5px 0 #000;     /* hard, flat — NOT a glow */
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:#04040a;color:var(--ink);font-family:'VT323',monospace;
+    display:flex;align-items:center;justify-content:center;min-height:100vh;padding:26px;
+    /* subtle dither/grid, no blur, no bloom */
+    background-image:
+      repeating-linear-gradient(0deg, #06060d 0 2px, #04040a 2px 4px),
+      radial-gradient(900px 500px at 50% 0%, #0a0c1a 0%, #04040a 70%);
+  }
+
+  .app{
+    width:900px;height:580px;background:var(--bg);position:relative;overflow:hidden;
+    border:2px solid var(--edge);box-shadow:var(--shadow);
+    display:flex;flex-direction:column;
+  }
+  /* CRT overlay: scanlines + vignette + flicker. texture, not bloom. */
+  .app::after{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:50;
+    background:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px),
+      radial-gradient(120% 120% at 50% 50%, transparent 62%, rgba(0,0,0,.55) 100%);
+    mix-blend-mode:multiply;animation:flick 5s steps(60) infinite;
+  }
+  @keyframes flick{0%,97%{opacity:.9}98%{opacity:.72}100%{opacity:.9}}
+
+  /* title bar */
+  .bar{height:34px;flex:0 0 34px;display:flex;align-items:center;gap:10px;
+    padding:0 6px 0 12px;background:var(--panel);border-bottom:2px solid var(--edge);z-index:3;user-select:none}
+  .bar .tag{font-family:'Anton';font-size:15px;letter-spacing:1.5px}
+  .bar .tag b{color:var(--blue)}
+  .bar .crumbs{font-size:16px;color:var(--dim);letter-spacing:1px}
+  .bar .win{margin-left:auto;display:flex;gap:0}
+  .wb{width:32px;height:24px;border:none;background:transparent;color:var(--dim);cursor:pointer;
+    font-family:'VT323';font-size:17px}
+  .wb:hover{background:var(--panel-2);color:var(--ink)}
+  .wb.x:hover{background:var(--red);color:#000}
+
+  .stage{flex:1;position:relative;min-height:0}
+  .screen{position:absolute;inset:0;display:flex;opacity:0;transform:scaleY(.004);
+    transform-origin:center;pointer-events:none;filter:brightness(2)}
+  .screen.show{opacity:1;transform:scaleY(1);filter:brightness(1);pointer-events:auto;
+    transition:transform .42s cubic-bezier(.16,1,.3,1), opacity .25s ease, filter .5s ease}
+  .screen.out{opacity:0;transform:scaleY(.004);filter:brightness(2);
+    transition:transform .3s cubic-bezier(.7,0,.84,0), opacity .3s ease, filter .3s}
+
+  /* ===================== BOOT / TAMPER CHECK ===================== */
+  #boot{flex-direction:column;padding:30px 38px;font-size:19px;line-height:1.32;background:#06070e}
+  #boot .head{font-family:'Anton';font-size:30px;letter-spacing:2px;color:var(--ink);
+    display:flex;align-items:center;gap:14px;margin-bottom:4px}
+  #boot .head .spin{color:var(--blue);font-family:'VT323';font-size:30px;width:22px;display:inline-block}
+  #boot .head.ok{color:var(--green)}
+  #boot .sub{color:var(--dim);font-size:17px;letter-spacing:1px;margin-bottom:18px}
+  #boot .log{flex:1;overflow:hidden;white-space:pre-wrap;color:#b8c2d8}
+  #boot .log .ok{color:var(--green)}
+  #boot .log .hot{color:var(--amber)}
+  #boot .log .b{color:var(--blue)}
+  .meter{margin-top:14px;font-size:20px;letter-spacing:2px;color:var(--blue)}
+  .meter .empty{color:var(--faint)}
+  .caret{background:var(--ink);color:var(--ink);animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ===================== VERIFY GATE (NFO box) ===================== */
+  #gate{align-items:center;justify-content:center}
+  .nfo{width:520px;border:2px solid var(--edge);background:var(--panel);box-shadow:var(--shadow);
+    padding:0}
+  .nfo .top{font-size:16px;color:var(--dim);border-bottom:2px solid var(--edge);padding:6px 14px;
+    letter-spacing:2px;display:flex;justify-content:space-between}
+  .nfo .body{padding:26px 30px 30px;text-align:center}
+  .stamp{display:inline-block;font-family:'Anton';font-size:14px;letter-spacing:3px;color:var(--red);
+    border:2px solid var(--red);padding:4px 12px;transform:rotate(-3deg);margin-bottom:18px}
+  .nfo h2{font-family:'Anton';font-size:34px;letter-spacing:1px;margin:0 0 6px}
+  .nfo p{font-size:18px;color:var(--dim);line-height:1.4;margin:0 auto 22px;max-width:380px}
+  .nfo p b{color:var(--amber)}
+
+  /* brutalist button: hard shadow, color invert on hover. no glow. */
+  .btn{font-family:'Anton';letter-spacing:1.5px;font-size:18px;border:2px solid var(--ink);
+    background:var(--ink);color:#06060e;padding:13px 26px;cursor:pointer;position:relative;
+    box-shadow:4px 4px 0 #000;transition:transform .08s, box-shadow .08s, background .12s, color .12s;
+    display:inline-flex;align-items:center;gap:10px}
+  .btn:hover{background:var(--bg);color:var(--ink);transform:translate(-1px,-1px);box-shadow:6px 6px 0 #000}
+  .btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #000}
+  .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+  .btn.blue:hover{background:var(--bg);color:var(--blue)}
+  .btn.red{background:var(--red);border-color:var(--red);color:#0a0a0a}
+  .btn.red:hover{background:var(--bg);color:var(--red)}
+  .btn.ghost{background:transparent;color:var(--ink);box-shadow:none;border-color:var(--edge)}
+  .btn.ghost:hover{border-color:var(--ink);background:var(--panel-2);transform:none}
+  .nfo small{display:block;margin-top:16px;color:var(--faint);font-size:15px;letter-spacing:1px}
+
+  /* ===================== MAIN ===================== */
+  #main{flex-direction:column}
+  .main-row{flex:1;display:flex;min-height:0}
+  /* left rail = release list */
+  .rail{width:228px;flex:0 0 228px;background:var(--panel);border-right:2px solid var(--edge);
+    display:flex;flex-direction:column;padding:12px 10px}
+  .rail .lbl{font-family:'Anton';font-size:13px;letter-spacing:3px;color:var(--dim);padding:4px 8px 10px}
+  .rel{padding:9px 10px;border:2px solid transparent;cursor:pointer;margin-bottom:6px;
+    display:flex;align-items:center;gap:10px;transition:border-color .12s, background .12s}
+  .rel:hover{background:var(--panel-2)}
+  .rel.on{border-color:var(--blue);background:var(--panel-2)}
+  .rel .no{font-family:'Anton';font-size:18px;color:var(--faint);width:22px}
+  .rel.on .no{color:var(--blue)}
+  .rel .nm{font-size:19px;line-height:1}
+  .rel .ex{font-size:14px;color:var(--dim)}
+  .rail .grow{flex:1}
+  .reqbtn{font-family:'Anton';font-size:15px;letter-spacing:1.5px;text-align:left;
+    border:2px dashed var(--edge);background:transparent;color:var(--amber);padding:11px 12px;cursor:pointer;
+    transition:border-color .12s,background .12s}
+  .reqbtn:hover{border-color:var(--amber);background:rgba(255,194,58,.06)}
+  .who{display:flex;align-items:center;gap:9px;padding:10px 8px 4px;margin-top:8px;border-top:2px solid var(--edge)}
+  .who .pic{width:26px;height:26px;background:var(--blue);flex:0 0 26px}
+  .who .h{font-size:17px;line-height:1}
+  .who .s{font-size:14px;color:var(--green)}
+
+  /* content */
+  .view{flex:1;min-width:0;padding:20px 24px;display:flex;flex-direction:column;position:relative}
+  .hero{position:relative;border:2px solid var(--edge);overflow:hidden;background:#0c1230}
+  .hero .art{height:196px;position:relative;
+    background:
+      repeating-linear-gradient(135deg, #0d1640 0 18px, #0a1030 18px 36px),
+      linear-gradient(180deg,#11204f,#0a0c1c);
+  }
+  /* fake road/horizon, flat shapes not gradients-soup */
+  .hero .sun{position:absolute;right:40px;top:30px;width:74px;height:74px;background:var(--amber);
+    clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .hero .road{position:absolute;left:50%;bottom:0;width:2px;height:120px;background:var(--ink);
+    transform:translateX(-50%);box-shadow:-40px 0 0 var(--ink),-90px 0 0 var(--ink),46px 0 0 var(--ink),96px 0 0 var(--ink);
+    opacity:.25}
+  .hero .ribbon{position:absolute;left:0;top:14px;background:var(--red);color:#0a0a0a;font-family:'Anton';
+    font-size:13px;letter-spacing:2px;padding:4px 14px 4px 12px}
+  .lic{position:absolute;right:12px;top:12px;font-size:16px;letter-spacing:1px;color:var(--green);
+    border:2px solid var(--green);padding:3px 10px}
+  .hero .name{position:absolute;left:16px;bottom:12px}
+  .hero .name h1{font-family:'Anton';font-size:40px;letter-spacing:1px;margin:0;line-height:.92}
+  .hero .name .by{font-size:16px;color:var(--dim);letter-spacing:1px}
+
+  .meta{padding:14px 16px;border:2px solid var(--edge);border-top:none}
+  .desc{font-size:18px;line-height:1.35;color:#aeb4cf;margin:0 0 14px}
+  .row{display:flex;gap:12px;align-items:center}
+
+  .foot{height:30px;flex:0 0 30px;border-top:2px solid var(--edge);background:var(--panel);
+    overflow:hidden;display:flex;align-items:center}
+  .marq{white-space:nowrap;font-size:17px;letter-spacing:2px;color:var(--blue);
+    animation:scrollx 16s linear infinite}
+  .marq b{color:var(--amber)}
+  .marq .x{color:var(--faint);margin:0 18px}
+  @keyframes scrollx{from{transform:translateX(100%)}to{transform:translateX(-100%)}}
+
+  .status{margin-top:auto;display:flex;align-items:center;gap:9px;font-size:16px;color:var(--dim);padding-top:14px}
+  .blip{width:9px;height:9px;background:var(--green)}
+  .ver{margin-left:auto;color:var(--faint)}
+
+  /* ===================== REQUEST MODAL ===================== */
+  .modal-wrap{position:absolute;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
+    background:rgba(4,4,10,.7)}
+  .modal-wrap.show{display:flex;animation:fadein .2s ease}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  .modal{width:480px;background:var(--panel);border:2px solid var(--edge);box-shadow:var(--shadow);
+    animation:drop .28s cubic-bezier(.16,1,.3,1)}
+  @keyframes drop{from{transform:translateY(-18px) scaleY(.9);opacity:.4}to{transform:none;opacity:1}}
+  .modal .mtop{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;
+    border-bottom:2px solid var(--edge)}
+  .modal .mtop h3{font-family:'Anton';font-size:20px;letter-spacing:2px;margin:0;color:var(--amber)}
+  .modal .mtop .c{cursor:pointer;color:var(--dim);font-size:20px}
+  .modal .mbody{padding:18px 20px 22px}
+  .modal label{display:block;font-size:16px;letter-spacing:1px;color:var(--dim);margin:0 0 6px}
+  .modal input[type=text],.modal textarea{width:100%;background:#06070e;border:2px solid var(--edge);color:var(--ink);
+    font-family:'VT323';font-size:19px;padding:8px 10px;margin-bottom:14px;outline:none;resize:none}
+  .modal input[type=text]:focus,.modal textarea:focus{border-color:var(--blue)}
+  /* zip dropzone */
+  .drop{border:2px dashed var(--edge);background:#06070e;padding:20px 14px;text-align:center;cursor:pointer;
+    color:var(--dim);font-size:17px;margin-bottom:14px;transition:border-color .12s,background .12s}
+  .drop:hover,.drop.drag{border-color:var(--blue);background:rgba(58,91,255,.07);color:var(--ink)}
+  .drop .big{font-family:'Anton';font-size:21px;color:var(--amber);letter-spacing:1px;display:block;margin-bottom:4px}
+  .drop.has{border-style:solid;border-color:var(--green)}
+  .drop .file{color:var(--green);font-size:19px;font-family:'Anton';letter-spacing:1px}
+  .drop .sz{color:var(--dim);font-size:15px}
+  .drop.bad{border-color:var(--red);color:var(--red)}
+  .modal .note{font-size:14px;color:var(--faint);line-height:1.4;margin:2px 0 16px}
+  .modal .mrow{display:flex;gap:10px;justify-content:flex-end}
+  .sent{text-align:center;padding:30px 20px;display:none}
+  .sent.show{display:block}
+  .sent .big{font-family:'Anton';font-size:26px;color:var(--green);letter-spacing:1px}
+  .sent p{font-size:17px;color:var(--dim)}
+
+  /* dev pills */
+  .toggle{position:fixed;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:0;z-index:99;
+    border:2px solid var(--edge)}
+  .toggle button{border:none;border-right:2px solid var(--edge);background:var(--panel);color:var(--dim);
+    font-family:'VT323';font-size:16px;letter-spacing:1px;padding:6px 14px;cursor:pointer}
+  .toggle button:last-child{border-right:none}
+  .toggle button:hover{color:var(--ink)}
+  .snd{position:fixed;top:50px;left:50%;transform:translateX(-50%);font-size:15px;color:var(--amber);
+    z-index:99;opacity:0;font-family:'VT323'}
+  .snd.show{opacity:1}
+  .hint{position:fixed;bottom:10px;left:0;right:0;text-align:center;color:#2c3048;font-size:14px;font-family:'VT323'}
+</style>
+</head>
+<body>
+  <div class="toggle">
+    <button onclick="boot()">REPLAY BOOT</button>
+    <button onclick="show('gate')">VERIFY</button>
+    <button onclick="show('main')">MAIN</button>
+    <button onclick="openReq()">REQUEST</button>
+  </div>
+  <div class="snd" id="snd">&#9888; CLICK ANYWHERE TO ARM STARTUP SOUND</div>
+
+  <audio id="bootsnd" src="../../ttsMP3.com_VoiceText_2026-6-4_7-49-18.mp3" preload="auto"></audio>
+
+  <div class="app">
+    <div class="bar">
+      <span class="tag">SEGA<b>+</b></span>
+      <span class="crumbs">// SECURE LOADER</span>
+      <span class="win">
+        <button class="wb">_</button>
+        <button class="wb x">&#10005;</button>
+      </span>
+    </div>
+
+    <div class="stage">
+
+      <!-- ================ BOOT ================ -->
+      <section class="screen" id="screen-boot">
+        <div style="display:flex;flex-direction:column;width:100%">
+          <div class="head" id="bHead"><span class="spin" id="bSpin">|</span> CHECKING FOR TAMPERING</div>
+          <div class="sub" id="bSub">do not close this window</div>
+          <div class="log" id="bLog"></div>
+          <div class="meter" id="bMeter"></div>
+        </div>
+      </section>
+
+      <!-- ================ VERIFY GATE ================ -->
+      <section class="screen" id="screen-gate">
+        <div class="nfo">
+          <div class="top"><span>SEGA+ // ACCESS</span><span>members.only</span></div>
+          <div class="body">
+            <div class="stamp">MEMBERS ONLY</div>
+            <h2>VERIFY TO ENTER</h2>
+            <p>Sign in with Discord to prove SEGA+ membership. Pass once and you hold a
+               <b>7-DAY LICENSE</b> — no re-verify until it runs out.</p>
+            <button class="btn blue" onclick="verify()">&#10003; VERIFY WITH DISCORD</button>
+            <small>opens your browser // game key is never written to disk</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================ MAIN ================ -->
+      <section class="screen" id="screen-main">
+        <div class="main-row">
+          <aside class="rail">
+            <div class="lbl">RELEASES</div>
+            <div class="rel on">
+              <span class="no">01</span>
+              <span><span class="nm">MODDED SLOWROADS</span><br><span class="ex">SEGA+ build</span></span>
+            </div>
+            <div class="rel">
+              <span class="no">02</span>
+              <span><span class="nm">NORMAL SLOWROADS</span><br><span class="ex">vanilla</span></span>
+            </div>
+            <div class="grow"></div>
+            <button class="reqbtn" onclick="openReq()">&#43; REQUEST A SOURCE</button>
+            <div class="who">
+              <div class="pic"></div>
+              <div><div class="h">justoneontop</div><div class="s">&#9646; SEGA+ verified</div></div>
+            </div>
+          </aside>
+
+          <main class="view">
+            <div class="hero">
+              <div class="art">
+                <div class="sun"></div>
+                <div class="road"></div>
+                <div class="ribbon">SEGA+ EXCLUSIVE</div>
+                <div class="lic">&#9646; LICENSE &middot; 7D LEFT</div>
+                <div class="name"><h1>MODDED<br>SLOWROADS</h1><div class="by">orig. ANSLO &middot; modded for SEGA+</div></div>
+              </div>
+              <div class="meta">
+                <p class="desc">Endless procedural roads, tuned rides, members-only tweaks.
+                  Decrypted in memory and served locally — nothing copyrighted touches your disk on PLAY.</p>
+                <div class="row">
+                  <button class="btn red" onclick="hit(this)">&#9654; PLAY</button>
+                  <button class="btn ghost" onclick="hit(this)">&#11015; INSTALL</button>
+                </div>
+              </div>
+            </div>
+            <div class="status"><span class="blip"></span><span id="st">verified // license valid 7 days</span><span class="ver">v1.0.3</span></div>
+          </main>
+        </div>
+
+        <div class="foot">
+          <div class="marq">
+            &#9733; SKIDDED BY JUSTONEONTOP <span class="x">//</span> <b>SEGA+ ON TOP</b> <span class="x">//</span>
+            GREETZ TO THE CREW <span class="x">//</span> NO TAMPERING DETECTED <span class="x">//</span>
+            ENJOY THE RIDE <span class="x">//</span> &#9733; SKIDDED BY JUSTONEONTOP <span class="x">//</span> <b>SEGA+ ON TOP</b> <span class="x">//</span>
+          </div>
+        </div>
+
+        <!-- request modal lives over main -->
+        <div class="modal-wrap" id="reqModal">
+          <div class="modal">
+            <div class="mtop"><h3>REQUEST A SOURCE</h3><span class="c" onclick="closeReq()">&#10005;</span></div>
+            <div class="mbody" id="reqForm">
+              <label>SOURCE / GAME NAME</label>
+              <input type="text" id="reqName" placeholder="e.g. drift hunters x" maxlength="80">
+              <label>UPLOAD THE BUILD (.ZIP)</label>
+              <div class="drop" id="drop">
+                <span class="big">&#11015; DROP A .ZIP HERE</span>
+                <span id="dropTxt">or click to browse &middot; max 500&nbsp;MB</span>
+                <input type="file" id="reqFile" accept=".zip,application/zip" hidden>
+              </div>
+              <label>DETAILS (optional)</label>
+              <textarea id="reqNotes" rows="2" placeholder="source, version, anything useful"></textarea>
+              <div class="note">Submitted as <b style="color:var(--blue)">justoneontop</b>. Your .zip uploads straight to a private
+                SEGA+ GitHub repo; staff get the link in their queue — the webhook is never exposed to clients.</div>
+              <div class="mrow">
+                <button class="btn ghost" onclick="closeReq()">CANCEL</button>
+                <button class="btn blue" id="reqSend" onclick="sendReq()">SEND REQUEST</button>
+              </div>
+            </div>
+            <div class="sent" id="reqSent">
+              <div class="big">&#10003; REQUEST SENT</div>
+              <p>staff will review it in the SEGA+ server.</p>
+              <button class="btn ghost" onclick="closeReq()">CLOSE</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+  <div class="hint">MOCKUP // boot &rarr; verify &rarr; main. scene/cracktro skin. real app = WPF + bundled fonts.</div>
+
+<script>
+  const snd=document.getElementById('bootsnd');
+  let armed=false;
+  document.addEventListener('click',()=>{armed=true;document.getElementById('snd').classList.remove('show');},{once:true});
+  function playSnd(){snd.currentTime=0;const p=snd.play();if(p)p.then(()=>{armed=true;document.getElementById('snd').classList.remove('show');}).catch(()=>document.getElementById('snd').classList.add('show'));}
+
+  let cur=null;
+  function show(id){
+    const next=document.getElementById('screen-'+id);
+    if(cur&&cur!==next){const c=cur;c.classList.add('out');c.classList.remove('show');setTimeout(()=>c.classList.remove('out'),320);}
+    setTimeout(()=>next.classList.add('show'),cur?150:30);
+    cur=next;
+  }
+
+  // ---- boot / tamper sequence ----
+  const LINES=[
+    {t:'SEGA+ SECURE LOADER  v1.0.3',c:''},
+    {t:'(c) SEGA+ ON TOP  //  SKIDDED BY JUSTONEONTOP',c:'b'},
+    {t:'--------------------------------------------',c:''},
+    {t:'> mount vault.enc ................. ok',c:'ok'},
+    {t:'> sha-256 self-check ............. 1bf2cad0',c:'hot'},
+    {t:'> match /api/version ............. ok',c:'ok'},
+    {t:'> obfuscation seal ............... INTACT',c:'ok'},
+    {t:'> scan memory for hooks .......... clean',c:'ok'},
+  ];
+  let spinTimer,bootTimer;
+  function boot(){
+    ['gate','main'].forEach(i=>{const e=document.getElementById('screen-'+i);e.classList.remove('show','out');});
+    const head=document.getElementById('bHead'),spin=document.getElementById('bSpin'),
+          sub=document.getElementById('bSub'),log=document.getElementById('bLog'),meter=document.getElementById('bMeter');
+    head.className='head';head.innerHTML='<span class="spin" id="bSpin">|</span> CHECKING FOR TAMPERING';
+    sub.textContent='do not close this window';log.innerHTML='';meter.innerHTML='';
+    cur=document.getElementById('screen-boot');cur.classList.remove('out');cur.classList.add('show');
+    playSnd();
+
+    const sp=document.getElementById('bSpin');const frames=['|','/','-','\\'];let fi=0;
+    clearInterval(spinTimer);spinTimer=setInterval(()=>{sp.textContent=frames[fi=(fi+1)%4];},90);
+
+    let i=0;clearInterval(bootTimer);
+    bootTimer=setInterval(()=>{
+      if(i<LINES.length){const l=LINES[i++];log.innerHTML+=`<span class="${l.c}">${l.t}</span>\n`;}
+      else{clearInterval(bootTimer);runMeter();}
+    },360);
+
+    function runMeter(){
+      let n=0;const tot=18;
+      const mt=setInterval(()=>{
+        n++;meter.innerHTML='SCAN ['+'▬'.repeat(n)+'<span class="empty">'+'▬'.repeat(tot-n)+'</span>] '+Math.round(n/tot*100)+'%';
+        if(n>=tot){clearInterval(mt);done();}
+      },70);
+    }
+    function done(){
+      clearInterval(spinTimer);
+      log.innerHTML+='\n<span class="ok">[ OK ]  NO TAMPERING DETECTED</span>\n';
+      log.innerHTML+='launching interface<span class="caret">_</span>';
+      head.className='head ok';head.innerHTML='&#10003; INTEGRITY VERIFIED';
+      sub.textContent='secure // signature matches';
+      setTimeout(()=>show('gate'),1100);
+    }
+  }
+
+  function verify(){document.getElementById('st').textContent='verified // license valid 7 days';setTimeout(()=>show('main'),650);}
+  function hit(b){b.animate([{transform:'translate(2px,2px)'},{transform:'none'}],{duration:140});}
+
+  // ---- request a source ----
+  function openReq(){if(cur!==document.getElementById('screen-main'))show('main');setTimeout(()=>{
+    resetReq();document.getElementById('reqModal').classList.add('show');},cur?160:0);}
+  function closeReq(){document.getElementById('reqModal').classList.remove('show');}
+  function resetReq(){
+    document.getElementById('reqForm').style.display='block';
+    document.getElementById('reqSent').classList.remove('show');
+    document.getElementById('reqName').value='';document.getElementById('reqNotes').value='';
+    pickedFile=null;const d=document.getElementById('drop');d.classList.remove('has','bad');
+    d.querySelector('.big').innerHTML='&#11015; DROP A .ZIP HERE';
+    document.getElementById('dropTxt').innerHTML='or click to browse &middot; max 25&nbsp;MB';
+  }
+
+  // ---- zip upload handling ----
+  let pickedFile=null;
+  const MAXMB=500;
+  const drop=document.getElementById('drop'), fileInput=document.getElementById('reqFile');
+  drop.addEventListener('click',()=>fileInput.click());
+  fileInput.addEventListener('change',e=>setFile(e.target.files[0]));
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag');}));
+  drop.addEventListener('drop',e=>{if(e.dataTransfer.files[0])setFile(e.dataTransfer.files[0]);});
+  function setFile(f){
+    drop.classList.remove('bad','has');
+    if(!f) return;
+    const isZip=/\.zip$/i.test(f.name)||f.type.includes('zip');
+    if(!isZip){drop.classList.add('bad');drop.querySelector('.big').textContent='NOT A .ZIP';
+      document.getElementById('dropTxt').textContent='please drop a .zip archive';pickedFile=null;return;}
+    if(f.size>MAXMB*1024*1024){drop.classList.add('bad');drop.querySelector('.big').textContent='TOO BIG';
+      document.getElementById('dropTxt').textContent='max '+MAXMB+' MB';pickedFile=null;return;}
+    pickedFile=f;drop.classList.add('has');
+    drop.querySelector('.big').innerHTML='&#128230; <span class="file">'+f.name+'</span>';
+    document.getElementById('dropTxt').innerHTML='<span class="sz">'+(f.size/1048576).toFixed(2)+' MB &middot; click to change</span>';
+  }
+
+  function sendReq(){
+    const name=document.getElementById('reqName').value.trim();
+    if(!name){document.getElementById('reqName').focus();return;}
+    if(!pickedFile){drop.classList.add('bad');drop.querySelector('.big').textContent='ADD A .ZIP FIRST';return;}
+    const notes=document.getElementById('reqNotes').value.trim();
+    const btn=document.getElementById('reqSend');btn.textContent='UPLOADING...';
+    // REAL WIRING (mockup simulates): client --multipart--> /api/request -> staff webhook (file relayed server-side)
+    const fd=new FormData();
+    fd.append('source',name);fd.append('notes',notes);
+    fd.append('user','justoneontop');fd.append('uid','000');
+    fd.append('build',pickedFile,pickedFile.name);
+    fetch('/api/request',{method:'POST',body:fd})   // no Content-Type: browser sets multipart boundary
+      .catch(()=>{}).finally(()=>{
+        btn.textContent='SEND REQUEST';
+        document.getElementById('reqForm').style.display='none';
+        document.getElementById('reqSent').classList.add('show');
+      });
+  }
+
+  window.addEventListener('load',()=>{document.getElementById('snd').classList.add('show');boot();});
+</script>
+</body>
+</html>
