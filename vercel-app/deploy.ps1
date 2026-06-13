@@ -44,6 +44,9 @@ if ($missing) { Write-Error "Missing values in ${EnvFile}: $($missing -join ', '
 if (-not (Test-Path (Join-Path $PSScriptRoot "public\game.enc"))) {
   Write-Warning "public/game.enc is missing - the launcher's download will 404. Run ..\package.ps1 first to stage it."
 }
+if (-not (Test-Path (Join-Path $PSScriptRoot "public\eaglercraftx.enc"))) {
+  Write-Warning "public/eaglercraftx.enc is missing - EaglercraftX downloads will 404. Run ..\package.ps1 first to stage it."
+}
 
 Write-Host "Vercel scope: $scopeLabel" -ForegroundColor Cyan
 Write-Host "(If this fails with an auth error, run 'npx vercel login' and complete it in Google Chrome.)" -ForegroundColor Yellow

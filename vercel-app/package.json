@@ -7,6 +7,7 @@
     "dev": "vercel dev",
     "obfuscate": "node scripts/obfuscate.mjs",
     "build:blob": "node scripts/build-blob.mjs",
+    "build:eaglercraftx": "node scripts/build-blob.mjs game-src-eaglercraftx dist/eaglercraftx.enc",
     "keygen": "node scripts/genkey.mjs",
     "make:vector": "node scripts/make-test-vector.mjs"
   },

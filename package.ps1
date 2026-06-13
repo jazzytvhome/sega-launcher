@@ -41,11 +41,27 @@ try {
 $blob = Join-Path $vercel "dist\game.enc"
 if (-not (Test-Path $blob)) { Write-Error "game.enc was not produced." }
 
-# --- 2. Stage the blob for Vercel (served gated by middleware) ------------
+# --- 2. Stage the blobs for Vercel (served gated by middleware) -----------
+New-Item -ItemType Directory -Force (Join-Path $vercel "public") | Out-Null
+
 $pubBlob = Join-Path $vercel "public\game.enc"
-New-Item -ItemType Directory -Force (Split-Path $pubBlob) | Out-Null
 Copy-Item $blob $pubBlob -Force
 Write-Host "==> Staged blob -> vercel-app/public/game.enc" -ForegroundColor Cyan
+
+# Build eaglercraftx.enc if the game source exists
+$eagleSrc = Join-Path $vercel "game-src-eaglercraftx"
+if (Test-Path $eagleSrc) {
+  Write-Host "==> Building eaglercraftx.enc..." -ForegroundColor Cyan
+  Push-Location $vercel
+  try { npm run build:eaglercraftx } finally { Pop-Location }
+  $eagleBlob = Join-Path $vercel "dist\eaglercraftx.enc"
+  if (Test-Path $eagleBlob) {
+    Copy-Item $eagleBlob (Join-Path $vercel "public\eaglercraftx.enc") -Force
+    Write-Host "==> Staged blob -> vercel-app/public/eaglercraftx.enc" -ForegroundColor Cyan
+  } else { Write-Warning "eaglercraftx.enc was not produced." }
+} else {
+  Write-Warning "game-src-eaglercraftx/ not found - skipping EaglercraftX blob. Add EaglercraftX source there first."
+}
 
 # --- 3. Publish the launcher exe ------------------------------------------
 # The self-contained build obfuscates the managed assembly via Obfuscar

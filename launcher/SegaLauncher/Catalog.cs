@@ -17,5 +17,10 @@ public static class Catalog
             "Slow Roads (modded)",
             "game.enc",
             "Endless driving zen - modded build. Full credit: slowroads.io (Anslo)."),
+        new SourceItem(
+            "eaglercraftx",
+            "EaglercraftX 1.8",
+            "eaglercraftx.enc",
+            "Minecraft in the browser — EaglercraftX 1.8 WASM build."),
     };
 }

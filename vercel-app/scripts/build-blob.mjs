@@ -2,8 +2,8 @@ import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync } from "n
 import { join, relative, sep } from "node:path";
 import { packContainer, encryptBlob } from "./lib/pack.mjs";
 
-const SRC = "game-src";
-const OUT = "dist/game.enc";
+const SRC = process.argv[2] ?? process.env.BLOB_SRC ?? "game-src";
+const OUT = process.argv[3] ?? process.env.BLOB_OUT ?? "dist/game.enc";
 
 const keyB64 = process.env.GAME_KEY;
 if (!keyB64) {

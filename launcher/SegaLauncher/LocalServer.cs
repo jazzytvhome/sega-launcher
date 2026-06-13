@@ -65,6 +65,9 @@ public sealed class LocalServer : IDisposable
             }
             ctx.Response.ContentType = ContentType(path);
             ctx.Response.ContentLength64 = bytes.Length;
+            // Required for SharedArrayBuffer (WebAssembly threading in EaglercraftX)
+            ctx.Response.AppendHeader("Cross-Origin-Opener-Policy", "same-origin");
+            ctx.Response.AppendHeader("Cross-Origin-Embedder-Policy", "require-corp");
             ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
             ctx.Response.OutputStream.Close();
         }

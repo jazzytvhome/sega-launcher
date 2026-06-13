@@ -4,7 +4,7 @@ import { verifyDownload } from "./lib/tokens.js";
 // Gate ONLY the encrypted blob: it can be fetched only with a valid, short-lived
 // download token from /api/verify (sent as "Authorization: Bearer <token>").
 export const config = {
-  matcher: ["/game.enc"],
+  matcher: ["/game.enc", "/eaglercraftx.enc"],
 };
 
 export default async function middleware(request: Request): Promise<Response> {
