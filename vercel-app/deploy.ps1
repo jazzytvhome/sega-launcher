@@ -17,6 +17,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# Prevent UTF-8 BOM from being prepended to every piped value sent to npx/vercel CLI.
+[Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
 $keys = @("DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN", "SEGA_GUILD_ID", "GAME_KEY")
 
 # Only pass --scope when a (team) scope is given; a personal account is rejected by --scope.
@@ -64,11 +66,19 @@ if ($DryRun) {
 # --- link the project (idempotent; creates it on first run) ---
 npx vercel link --yes @scopeArgs
 
+# Helper: pipe a value via cmd.exe to avoid PowerShell's UTF-8 BOM injection on native pipes.
+function Push-EnvVar($name, $value, $extra) {
+  $tmp = [System.IO.Path]::GetTempFileName()
+  [System.IO.File]::WriteAllBytes($tmp, [System.Text.Encoding]::UTF8.GetBytes($value))
+  cmd /c "type `"$tmp`" | npx vercel env add $name production $($extra -join ' ') 2>&1"
+  Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+}
+
 # --- push each var to production (remove-then-add so re-runs update cleanly) ---
 foreach ($k in $keys) {
   Write-Host "==> $k" -ForegroundColor Cyan
   try { npx vercel env rm $k production --yes @scopeArgs 2>$null | Out-Null } catch {}
-  $vals[$k] | npx vercel env add $k production @scopeArgs
+  Push-EnvVar $k $vals[$k] $scopeArgs
 }
 
 # --- optional vars (pushed only if set in .env) ---
@@ -76,7 +86,7 @@ foreach ($k in @("BLACKLIST", "MIN_VERSION", "LATEST_VERSION", "DOWNLOAD_URL", "
   if ($vals.ContainsKey($k) -and $vals[$k]) {
     Write-Host "==> $k (optional)" -ForegroundColor Cyan
     try { npx vercel env rm $k production --yes @scopeArgs 2>$null | Out-Null } catch {}
-    $vals[$k] | npx vercel env add $k production @scopeArgs
+    Push-EnvVar $k $vals[$k] $scopeArgs
   }
 }
 

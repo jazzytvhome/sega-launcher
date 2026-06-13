@@ -9,7 +9,7 @@ public static class AppConfig
 
     // Bump this when you ship an update, and set MIN_VERSION in Vercel to match
     // so older launchers show "update needed".
-    public const string Version = "1.0.3";
+    public const string Version = "1.0.4";
 
     // Auto-update will only download+run an exe from THIS GitHub repo's releases.
     public const string UpdateRepoPathPrefix = "/jazzytvhome/sega-launcher/releases/";
