@@ -19,7 +19,7 @@ param(
 $ErrorActionPreference = "Stop"
 # Prevent UTF-8 BOM from being prepended to every piped value sent to npx/vercel CLI.
 [Console]::OutputEncoding = New-Object System.Text.UTF8Encoding($false)
-$keys = @("DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN", "SEGA_GUILD_ID", "GAME_KEY")
+$keys = @("DISCORD_CLIENT_ID", "DISCORD_CLIENT_SECRET", "DISCORD_BOT_TOKEN", "SEGA_GUILD_ID", "GAME_KEY", "LICENSE_SECRET")
 
 # Only pass --scope when a (team) scope is given; a personal account is rejected by --scope.
 $scopeArgs = @()
