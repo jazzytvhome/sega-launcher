@@ -76,17 +76,34 @@ public static class UpdateInstaller
                 }
             }
 
-            // integrity: if the server pinned a SHA-256, the download MUST match it
-            if (!string.IsNullOrWhiteSpace(expectedSha256))
+            // SHA-256 is required — refuse to auto-install anything unverified
+            if (string.IsNullOrWhiteSpace(expectedSha256))
             {
-                string actual;
-                using (var fs = File.OpenRead(tmp))
-                    actual = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fs)).ToLowerInvariant();
-                if (!actual.Equals(expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
-                {
-                    File.Delete(tmp);
-                    return false;
-                }
+                File.Delete(tmp);
+                return false;
+            }
+
+            string actual;
+            using (var fs = File.OpenRead(tmp))
+                actual = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fs)).ToLowerInvariant();
+
+            if (!actual.Equals(expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(tmp);
+                return false;
+            }
+
+            // Bail out if the downloaded exe is identical to the running one — the server
+            // is misconfigured (MIN_VERSION bumped but the release URL still serves the old build).
+            // This prevents an infinite update-relaunch loop.
+            string currentHash;
+            using (var fs = File.OpenRead(current))
+                currentHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(fs)).ToLowerInvariant();
+
+            if (actual == currentHash)
+            {
+                File.Delete(tmp);
+                return false;
             }
 
             var backup = current + ".old";
